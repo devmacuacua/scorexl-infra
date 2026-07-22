@@ -1,0 +1,169 @@
+# Auto-generated build-context overlay for local development.
+#
+# Only used via scripts/dev.sh — never referenced by scripts/deploy.sh, so
+# production always pulls prebuilt images from GHCR and is unaffected by
+# this file (production has no sibling source checkouts to build from).
+#
+# Regenerate if new services are added to docker-compose.yml (see the
+# generator invoked from scripts/dev.sh's `regen` subcommand).
+services:
+  scorexl-football-api:
+    build:
+      context: ../scorexl-football-api
+    image: !reset null
+  scorexl-football-handicap-engine:
+    build:
+      context: ../scorexl-football-handicap-engine
+    image: !reset null
+  scorexl-football-over-under-engine:
+    build:
+      context: ../scorexl-football-over-under-engine
+    image: !reset null
+  scorexl-football-btts-engine:
+    build:
+      context: ../scorexl-football-btts-engine
+    image: !reset null
+  scorexl-football-match-winner-engine:
+    build:
+      context: ../scorexl-football-match-winner-engine
+    image: !reset null
+  scorexl-football-live-opportunities-engine:
+    build:
+      context: ../scorexl-football-live-opportunities-engine
+    image: !reset null
+  scorexl-football-double-chance-engine:
+    build:
+      context: ../scorexl-football-double-chance-engine
+    image: !reset null
+  scorexl-football-team-over-goals-engine:
+    build:
+      context: ../scorexl-football-team-over-goals-engine
+    image: !reset null
+  scorexl-football-corners-engine:
+    build:
+      context: ../scorexl-football-corners-engine
+    image: !reset null
+  scorexl-football-cards-engine:
+    build:
+      context: ../scorexl-football-cards-engine
+    image: !reset null
+  scorexl-football-shots-engine:
+    build:
+      context: ../scorexl-football-shots-engine
+    image: !reset null
+  scorexl-football-fouls-engine:
+    build:
+      context: ../scorexl-football-fouls-engine
+    image: !reset null
+  scorexl-basketball-api:
+    build:
+      context: ../scorexl-basketball-api
+    image: !reset null
+  scorexl-basketball-winner-engine:
+    build:
+      context: ../scorexl-basketball-winner-engine
+    image: !reset null
+  scorexl-basketball-spread-engine:
+    build:
+      context: ../scorexl-basketball-spread-engine
+    image: !reset null
+  scorexl-basketball-totals-engine:
+    build:
+      context: ../scorexl-basketball-totals-engine
+    image: !reset null
+  scorexl-basketball-first-half-totals-engine:
+    build:
+      context: ../scorexl-basketball-first-half-totals-engine
+    image: !reset null
+  scorexl-basketball-first-half-spread-engine:
+    build:
+      context: ../scorexl-basketball-first-half-spread-engine
+    image: !reset null
+  scorexl-basketball-first-quarter-totals-engine:
+    build:
+      context: ../scorexl-basketball-first-quarter-totals-engine
+    image: !reset null
+  scorexl-basketball-first-quarter-spread-engine:
+    build:
+      context: ../scorexl-basketball-first-quarter-spread-engine
+    image: !reset null
+  scorexl-basketball-first-half-winner-engine:
+    build:
+      context: ../scorexl-basketball-first-half-winner-engine
+    image: !reset null
+  scorexl-basketball-team-totals-engine:
+    build:
+      context: ../scorexl-basketball-team-totals-engine
+    image: !reset null
+  scorexl-basketball-first-quarter-winner-engine:
+    build:
+      context: ../scorexl-basketball-first-quarter-winner-engine
+    image: !reset null
+  scorexl-nba-api:
+    build:
+      context: ../scorexl-nba-api
+    image: !reset null
+  scorexl-nba-winner-engine:
+    build:
+      context: ../scorexl-nba-winner-engine
+    image: !reset null
+  scorexl-nba-spread-engine:
+    build:
+      context: ../scorexl-nba-spread-engine
+    image: !reset null
+  scorexl-nba-totals-engine:
+    build:
+      context: ../scorexl-nba-totals-engine
+    image: !reset null
+  scorexl-nba-first-half-winner-engine:
+    build:
+      context: ../scorexl-nba-first-half-winner-engine
+    image: !reset null
+  scorexl-nba-first-half-totals-engine:
+    build:
+      context: ../scorexl-nba-first-half-totals-engine
+    image: !reset null
+  scorexl-nba-first-quarter-winner-engine:
+    build:
+      context: ../scorexl-nba-first-quarter-winner-engine
+    image: !reset null
+  scorexl-nba-first-quarter-totals-engine:
+    build:
+      context: ../scorexl-nba-first-quarter-totals-engine
+    image: !reset null
+  scorexl-nba-team-totals-engine:
+    build:
+      context: ../scorexl-nba-team-totals-engine
+    image: !reset null
+  scorexl-nba-team-rebounds-engine:
+    build:
+      context: ../scorexl-nba-team-rebounds-engine
+    image: !reset null
+  scorexl-nba-team-assists-engine:
+    build:
+      context: ../scorexl-nba-team-assists-engine
+    image: !reset null
+  scorexl-nba-team-threes-engine:
+    build:
+      context: ../scorexl-nba-team-threes-engine
+    image: !reset null
+  scorexl-nba-team-turnovers-engine:
+    build:
+      context: ../scorexl-nba-team-turnovers-engine
+    image: !reset null
+  scorexl-volleyball-api:
+    build:
+      context: ../scorexl-volleyball-api
+    image: !reset null
+  scorexl-volleyball-winner-engine:
+    build:
+      context: ../scorexl-volleyball-winner-engine
+    image: !reset null
+  scorexl-web:
+    build:
+      context: ../scorexl-web
+    image: !reset null
+  scorexl-user-api:
+    build:
+      context: ../scorexl-user-api
+    image: !reset null
