@@ -1,0 +1,3 @@
+-- No extra databases needed for nba — scorexl_nba is created automatically
+-- by the POSTGRES_DB env var. Kept as a mount point for parity with
+-- football's init.sql.

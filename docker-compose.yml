@@ -1,0 +1,816 @@
+services:
+  # ════════════════════════════════════════════════════════════════════════
+  # FOOTBALL
+  # ════════════════════════════════════════════════════════════════════════
+
+  scorexl-football-api:
+    container_name: scorexl-football-api
+    profiles: ["football"]
+    image: ghcr.io/devmacuacua/scorexl-football-api:latest
+    restart: always
+    ports:
+      - "4000:4000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 4000
+      JAVA_TOOL_OPTIONS: "-Xmx512m -XX:MaxMetaspaceSize=192m -Xss512k"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-football-postgres:5432/${FOOTBALL_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${FOOTBALL_POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      # Now reachable by service name — both containers sit on the same
+      # shared network, so the old host.docker.internal hack is no longer
+      # needed for this one. Left extra_hosts above in place regardless,
+      # in case anything else in the image still relies on it.
+      USER_API_URL: http://scorexl-user-api:9000
+    depends_on:
+      - scorexl-football-postgres
+      - scorexl-user-api
+    networks:
+      - scorexl-network
+
+  scorexl-football-postgres:
+    image: postgres:16
+    container_name: scorexl-football-postgres
+    profiles: ["football"]
+    restart: always
+    environment:
+      POSTGRES_DB: ${FOOTBALL_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${FOOTBALL_POSTGRES_PASSWORD}
+    volumes:
+      - scorexl_football_postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/football-init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - scorexl-network
+
+  scorexl-football-handicap-engine:
+    container_name: scorexl-football-handicap-engine
+    profiles: ["football"]
+    image: ghcr.io/devmacuacua/scorexl-football-handicap-engine:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 4001
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "4001:4001"
+    networks:
+      - scorexl-network
+
+  scorexl-football-over-under-engine:
+    container_name: scorexl-football-over-under-engine
+    profiles: ["football"]
+    image: ghcr.io/devmacuacua/scorexl-football-over-under-engine:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 4002
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "4002:4002"
+    networks:
+      - scorexl-network
+
+  scorexl-football-btts-engine:
+    container_name: scorexl-football-btts-engine
+    profiles: ["football"]
+    image: ghcr.io/devmacuacua/scorexl-football-btts-engine:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 4003
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "4003:4003"
+    networks:
+      - scorexl-network
+
+  scorexl-football-match-winner-engine:
+    container_name: scorexl-football-match-winner-engine
+    profiles: ["football"]
+    image: ghcr.io/devmacuacua/scorexl-football-match-winner-engine:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 4004
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "4004:4004"
+    networks:
+      - scorexl-network
+
+  # Driven by football-api's LiveOpportunityTriggerService, which only ever
+  # asks it to process specific fixture IDs (ones with a published pre-match
+  # pick), not a blanket "every live fixture worldwide" sweep. Its own
+  # internal scheduler stays disabled (SCOREXL_LIVE_SCHEDULER_ENABLED=false)
+  # — football-api decides when/which now. See football-api's
+  # scorexl.live-opportunities.enabled (off by default) for the actual
+  # on/off switch.
+  scorexl-football-live-opportunities-engine:
+    container_name: scorexl-football-live-opportunities-engine
+    profiles: ["football"]
+    image: ghcr.io/devmacuacua/scorexl-football-live-opportunities-engine:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 4005
+      # Higher than the other engines' 64m: this is the only lightweight
+      # engine that also loads JPA/Hibernate (own datasource below), which
+      # needs more metaspace headroom than the stateless engines it was
+      # copied from — at 64m it OOM'd on metaspace while trying to *log* an
+      # unrelated startup failure, masking the real error.
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=128m -Xss256k"
+      # Note the missing underscore — the engine's own application.properties
+      # reads apifootball.api-key=${APIFOOTBALL_API_KEY} (a naming typo baked
+      # into the currently-published :latest image, predating this repo; the
+      # engine's GitHub repo is gone so the source can't be fixed/rebuilt —
+      # matching the container env var name here is the only fix available).
+      APIFOOTBALL_API_KEY: ${API_FOOTBALL_API_KEY}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-football-postgres:5432/scorexl_football_live
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${FOOTBALL_POSTGRES_PASSWORD}
+      SCOREXL_LIVE_SCHEDULER_ENABLED: "false"
+    ports:
+      - "4005:4005"
+    depends_on:
+      - scorexl-football-postgres
+    networks:
+      - scorexl-network
+
+  scorexl-football-double-chance-engine:
+    container_name: scorexl-football-double-chance-engine
+    profiles: ["football"]
+    image: ghcr.io/devmacuacua/scorexl-football-double-chance-engine:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 4007
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "4007:4007"
+    networks:
+      - scorexl-network
+
+  scorexl-football-team-over-goals-engine:
+    container_name: scorexl-football-team-over-goals-engine
+    profiles: ["football"]
+    image: ghcr.io/devmacuacua/scorexl-football-team-over-goals-engine:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 4010
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "4010:4010"
+    networks:
+      - scorexl-network
+
+  scorexl-football-corners-engine:
+    container_name: scorexl-football-corners-engine
+    profiles: ["football"]
+    image: ghcr.io/devmacuacua/scorexl-football-corners-engine:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 4006
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "4006:4006"
+    networks:
+      - scorexl-network
+
+  scorexl-football-cards-engine:
+    container_name: scorexl-football-cards-engine
+    profiles: ["football"]
+    image: ghcr.io/devmacuacua/scorexl-football-cards-engine:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 4008
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "4008:4008"
+    networks:
+      - scorexl-network
+
+  scorexl-football-shots-engine:
+    container_name: scorexl-football-shots-engine
+    profiles: ["football"]
+    image: ghcr.io/devmacuacua/scorexl-football-shots-engine:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 4009
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "4009:4009"
+    networks:
+      - scorexl-network
+
+  scorexl-football-fouls-engine:
+    container_name: scorexl-football-fouls-engine
+    profiles: ["football"]
+    image: ghcr.io/devmacuacua/scorexl-football-fouls-engine:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 4011
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "4011:4011"
+    networks:
+      - scorexl-network
+
+  # ════════════════════════════════════════════════════════════════════════
+  # BASKETBALL
+  # ════════════════════════════════════════════════════════════════════════
+
+  scorexl-basketball-api:
+    container_name: scorexl-basketball-api
+    profiles: ["basketball"]
+    image: ghcr.io/devmacuacua/scorexl-basketball-api:latest
+    restart: always
+    ports:
+      - "5000:5000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 5000
+      JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-basketball-postgres:5432/${BASKETBALL_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${BASKETBALL_POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      USER_API_URL: http://scorexl-user-api:9000
+      # Engine URLs now come purely from .env (env_file above), matching
+      # football's existing convention, instead of being hardcoded here —
+      # see BASKETBALL_*_ENGINE_URL in .env.example.
+    depends_on:
+      - scorexl-basketball-postgres
+      - scorexl-user-api
+    networks:
+      - scorexl-network
+
+  scorexl-basketball-winner-engine:
+    container_name: scorexl-basketball-winner-engine
+    profiles: ["basketball"]
+    image: ghcr.io/devmacuacua/scorexl-basketball-winner-engine:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 5001
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "5001:5001"
+    networks:
+      - scorexl-network
+
+  scorexl-basketball-spread-engine:
+    container_name: scorexl-basketball-spread-engine
+    profiles: ["basketball"]
+    image: ghcr.io/devmacuacua/scorexl-basketball-spread-engine:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 5002
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "5002:5002"
+    networks:
+      - scorexl-network
+
+  scorexl-basketball-totals-engine:
+    container_name: scorexl-basketball-totals-engine
+    profiles: ["basketball"]
+    image: ghcr.io/devmacuacua/scorexl-basketball-totals-engine:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 5003
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "5003:5003"
+    networks:
+      - scorexl-network
+
+  scorexl-basketball-first-half-totals-engine:
+    container_name: scorexl-basketball-first-half-totals-engine
+    profiles: ["basketball"]
+    image: ghcr.io/devmacuacua/scorexl-basketball-first-half-totals-engine:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 5004
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "5004:5004"
+    networks:
+      - scorexl-network
+
+  scorexl-basketball-first-half-spread-engine:
+    container_name: scorexl-basketball-first-half-spread-engine
+    profiles: ["basketball"]
+    image: ghcr.io/devmacuacua/scorexl-basketball-first-half-spread-engine:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 5005
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "5005:5005"
+    networks:
+      - scorexl-network
+
+  scorexl-basketball-first-quarter-totals-engine:
+    container_name: scorexl-basketball-first-quarter-totals-engine
+    profiles: ["basketball"]
+    image: ghcr.io/devmacuacua/scorexl-basketball-first-quarter-totals-engine:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 5006
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "5006:5006"
+    networks:
+      - scorexl-network
+
+  scorexl-basketball-first-quarter-spread-engine:
+    container_name: scorexl-basketball-first-quarter-spread-engine
+    profiles: ["basketball"]
+    image: ghcr.io/devmacuacua/scorexl-basketball-first-quarter-spread-engine:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 5007
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "5007:5007"
+    networks:
+      - scorexl-network
+
+  scorexl-basketball-first-half-winner-engine:
+    container_name: scorexl-basketball-first-half-winner-engine
+    profiles: ["basketball"]
+    image: ghcr.io/devmacuacua/scorexl-basketball-first-half-winner-engine:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 5008
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "5008:5008"
+    networks:
+      - scorexl-network
+
+  scorexl-basketball-team-totals-engine:
+    container_name: scorexl-basketball-team-totals-engine
+    profiles: ["basketball"]
+    image: ghcr.io/devmacuacua/scorexl-basketball-team-totals-engine:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 5009
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "5009:5009"
+    networks:
+      - scorexl-network
+
+  scorexl-basketball-first-quarter-winner-engine:
+    container_name: scorexl-basketball-first-quarter-winner-engine
+    profiles: ["basketball"]
+    image: ghcr.io/devmacuacua/scorexl-basketball-first-quarter-winner-engine:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 5010
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "5010:5010"
+    networks:
+      - scorexl-network
+
+  scorexl-basketball-postgres:
+    image: postgres:16
+    container_name: scorexl-basketball-postgres
+    profiles: ["basketball"]
+    restart: always
+    environment:
+      POSTGRES_DB: ${BASKETBALL_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${BASKETBALL_POSTGRES_PASSWORD}
+    volumes:
+      - scorexl_basketball_postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/basketball-init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5433:5432"
+    networks:
+      - scorexl-network
+
+  # ════════════════════════════════════════════════════════════════════════
+  # NBA
+  # ════════════════════════════════════════════════════════════════════════
+
+  scorexl-nba-api:
+    container_name: scorexl-nba-api
+    profiles: ["nba"]
+    image: ghcr.io/devmacuacua/scorexl-nba-api:latest
+    restart: always
+    ports:
+      - "7000:7000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 7000
+      JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-nba-postgres:5432/${NBA_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${NBA_POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      API_NBA_KEY: ${API_NBA_KEY}
+      # Engine URLs now come purely from .env (env_file above), matching
+      # football's existing convention, instead of being hardcoded here —
+      # see NBA_*_ENGINE_URL in .env.example.
+    depends_on:
+      - scorexl-nba-postgres
+    networks:
+      - scorexl-network
+
+  # ── Team engines ──────────────────────────────────────────────────────────
+
+  scorexl-nba-winner-engine:
+    container_name: scorexl-nba-winner-engine
+    profiles: ["nba"]
+    image: ghcr.io/devmacuacua/scorexl-nba-winner-engine:latest
+    restart: always
+    env_file: [.env]
+    environment:
+      SERVER_PORT: 7001
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "7001:7001"
+    networks:
+      - scorexl-network
+
+  scorexl-nba-spread-engine:
+    container_name: scorexl-nba-spread-engine
+    profiles: ["nba"]
+    image: ghcr.io/devmacuacua/scorexl-nba-spread-engine:latest
+    restart: always
+    env_file: [.env]
+    environment:
+      SERVER_PORT: 7002
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "7002:7002"
+    networks:
+      - scorexl-network
+
+  scorexl-nba-totals-engine:
+    container_name: scorexl-nba-totals-engine
+    profiles: ["nba"]
+    image: ghcr.io/devmacuacua/scorexl-nba-totals-engine:latest
+    restart: always
+    env_file: [.env]
+    environment:
+      SERVER_PORT: 7003
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "7003:7003"
+    networks:
+      - scorexl-network
+
+  scorexl-nba-first-half-winner-engine:
+    container_name: scorexl-nba-first-half-winner-engine
+    profiles: ["nba"]
+    image: ghcr.io/devmacuacua/scorexl-nba-first-half-winner-engine:latest
+    restart: always
+    env_file: [.env]
+    environment:
+      SERVER_PORT: 7004
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "7004:7004"
+    networks:
+      - scorexl-network
+
+  scorexl-nba-first-half-totals-engine:
+    container_name: scorexl-nba-first-half-totals-engine
+    profiles: ["nba"]
+    image: ghcr.io/devmacuacua/scorexl-nba-first-half-totals-engine:latest
+    restart: always
+    env_file: [.env]
+    environment:
+      SERVER_PORT: 7005
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "7005:7005"
+    networks:
+      - scorexl-network
+
+  scorexl-nba-first-quarter-winner-engine:
+    container_name: scorexl-nba-first-quarter-winner-engine
+    profiles: ["nba"]
+    image: ghcr.io/devmacuacua/scorexl-nba-first-quarter-winner-engine:latest
+    restart: always
+    env_file: [.env]
+    environment:
+      SERVER_PORT: 7006
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "7006:7006"
+    networks:
+      - scorexl-network
+
+  scorexl-nba-first-quarter-totals-engine:
+    container_name: scorexl-nba-first-quarter-totals-engine
+    profiles: ["nba"]
+    image: ghcr.io/devmacuacua/scorexl-nba-first-quarter-totals-engine:latest
+    restart: always
+    env_file: [.env]
+    environment:
+      SERVER_PORT: 7007
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "7007:7007"
+    networks:
+      - scorexl-network
+
+  scorexl-nba-team-totals-engine:
+    container_name: scorexl-nba-team-totals-engine
+    profiles: ["nba"]
+    image: ghcr.io/devmacuacua/scorexl-nba-team-totals-engine:latest
+    restart: always
+    env_file: [.env]
+    environment:
+      SERVER_PORT: 7008
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "7008:7008"
+    networks:
+      - scorexl-network
+
+  scorexl-nba-team-rebounds-engine:
+    container_name: scorexl-nba-team-rebounds-engine
+    profiles: ["nba"]
+    image: ghcr.io/devmacuacua/scorexl-nba-team-rebounds-engine:latest
+    restart: always
+    env_file: [.env]
+    environment:
+      SERVER_PORT: 7009
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "7009:7009"
+    networks:
+      - scorexl-network
+
+  scorexl-nba-team-assists-engine:
+    container_name: scorexl-nba-team-assists-engine
+    profiles: ["nba"]
+    image: ghcr.io/devmacuacua/scorexl-nba-team-assists-engine:latest
+    restart: always
+    env_file: [.env]
+    environment:
+      SERVER_PORT: 7010
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "7010:7010"
+    networks:
+      - scorexl-network
+
+  scorexl-nba-team-threes-engine:
+    container_name: scorexl-nba-team-threes-engine
+    profiles: ["nba"]
+    image: ghcr.io/devmacuacua/scorexl-nba-team-threes-engine:latest
+    restart: always
+    env_file: [.env]
+    environment:
+      SERVER_PORT: 7011
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "7011:7011"
+    networks:
+      - scorexl-network
+
+  scorexl-nba-team-turnovers-engine:
+    container_name: scorexl-nba-team-turnovers-engine
+    profiles: ["nba"]
+    image: ghcr.io/devmacuacua/scorexl-nba-team-turnovers-engine:latest
+    restart: always
+    env_file: [.env]
+    environment:
+      SERVER_PORT: 7012
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "7012:7012"
+    networks:
+      - scorexl-network
+
+  # ── Database ────────────────────────────────────────────────────────────
+
+  scorexl-nba-postgres:
+    image: postgres:16
+    container_name: scorexl-nba-postgres
+    profiles: ["nba"]
+    restart: always
+    environment:
+      POSTGRES_DB: ${NBA_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${NBA_POSTGRES_PASSWORD}
+    volumes:
+      - scorexl_nba_postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/nba-init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5435:5432"
+    networks:
+      - scorexl-network
+
+  # ════════════════════════════════════════════════════════════════════════
+  # VOLLEYBALL (new)
+  # ════════════════════════════════════════════════════════════════════════
+
+  scorexl-volleyball-api:
+    container_name: scorexl-volleyball-api
+    profiles: ["volleyball"]
+    # Image does not exist yet — scorexl-volleyball-api is being built by a
+    # parallel workstream. Referenced here so this compose file is ready the
+    # moment it's pushed to ghcr.io.
+    image: ghcr.io/devmacuacua/scorexl-volleyball-api:latest
+    restart: always
+    ports:
+      - "8000:8000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 8000
+      JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-volleyball-postgres:5432/${VOLLEYBALL_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${VOLLEYBALL_POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      API_VOLLEYBALL_API_KEY: ${API_VOLLEYBALL_API_KEY}
+      USER_API_URL: http://scorexl-user-api:9000
+      # Engine URL comes purely from .env (env_file above) — see
+      # VOLLEYBALL_WINNER_ENGINE_URL in .env.example.
+    depends_on:
+      - scorexl-volleyball-postgres
+      - scorexl-user-api
+    networks:
+      - scorexl-network
+
+  scorexl-volleyball-winner-engine:
+    container_name: scorexl-volleyball-winner-engine
+    profiles: ["volleyball"]
+    # Image does not exist yet — scorexl-volleyball-winner-engine is being
+    # built by a parallel workstream. Referenced here so this compose file
+    # is ready the moment it's pushed to ghcr.io.
+    image: ghcr.io/devmacuacua/scorexl-volleyball-winner-engine:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 8001
+      # -Xmx128m matching every other stateless engine's low heap cap.
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "8001:8001"
+    networks:
+      - scorexl-network
+
+  scorexl-volleyball-postgres:
+    image: postgres:16
+    container_name: scorexl-volleyball-postgres
+    profiles: ["volleyball"]
+    restart: always
+    environment:
+      POSTGRES_DB: ${VOLLEYBALL_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${VOLLEYBALL_POSTGRES_PASSWORD}
+    volumes:
+      - scorexl_volleyball_postgres_data:/var/lib/postgresql/data
+    # 5434 was oddly skipped by the original 4 repos (5432/5433/5435/5436
+    # used) — reused here for the new sport instead of leaving it dead.
+    ports:
+      - "5434:5432"
+    networks:
+      - scorexl-network
+
+  # ════════════════════════════════════════════════════════════════════════
+  # WEB + USER API
+  # ════════════════════════════════════════════════════════════════════════
+
+  scorexl-web:
+    container_name: scorexl-web
+    image: ghcr.io/devmacuacua/scorexl-web:latest
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      - scorexl-user-api
+    networks:
+      - scorexl-network
+
+  scorexl-user-api:
+    container_name: scorexl-user-api
+    image: ghcr.io/devmacuacua/scorexl-user-api:latest
+    restart: always
+    ports:
+      - "9000:9000"
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 9000
+      JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-user-postgres:5432/scorexl_user
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${USER_POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    depends_on:
+      - scorexl-user-postgres
+    networks:
+      - scorexl-network
+
+  scorexl-user-postgres:
+    image: postgres:16
+    container_name: scorexl-user-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: scorexl_user
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${USER_POSTGRES_PASSWORD}
+    ports:
+      - "5436:5432"
+    volumes:
+      - scorexl_user_postgres_data:/var/lib/postgresql/data
+    networks:
+      - scorexl-network
+
+volumes:
+  scorexl_football_postgres_data:
+  scorexl_basketball_postgres_data:
+  scorexl_nba_postgres_data:
+  scorexl_volleyball_postgres_data:
+  scorexl_user_postgres_data:
+
+networks:
+  scorexl-network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+    ipam:
+      config:
+        # Distinct from the 4 legacy repos' subnets (basketball 172.28.0.0/16,
+        # nba 172.31.0.0/16, football/web unpinned/default-assigned) — chosen
+        # outside Docker's typical auto-assigned 172.17-172.31 range so it
+        # can't collide with those or any other bridge network already on
+        # the host.
+        - subnet: 10.89.0.0/24

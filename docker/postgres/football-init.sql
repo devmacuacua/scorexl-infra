@@ -1,0 +1,1 @@
+CREATE DATABASE scorexl_football_live;
