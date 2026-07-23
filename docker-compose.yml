@@ -369,6 +369,104 @@ services:
       - scorexl-network
 
   # ════════════════════════════════════════════════════════════════════════
+  # NFL (new, 2026-07-24 — picks-only pilot, no Ticket/Bingo)
+  # ════════════════════════════════════════════════════════════════════════
+
+  scorexl-nfl-api:
+    container_name: scorexl-nfl-api
+    profiles: ["nfl"]
+    image: ghcr.io/devmacuacua/scorexl-nfl-api:latest
+    restart: always
+    ports:
+      - "12000:12000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 12000
+      JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-nfl-postgres:5432/${NFL_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${NFL_POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      API_NFL_API_KEY: ${API_NFL_API_KEY}
+      USER_API_URL: http://scorexl-user-api:9000
+    depends_on:
+      - scorexl-nfl-postgres
+      - scorexl-user-api
+    networks:
+      - scorexl-network
+
+  scorexl-nfl-postgres:
+    image: postgres:16
+    container_name: scorexl-nfl-postgres
+    profiles: ["nfl"]
+    restart: always
+    environment:
+      POSTGRES_DB: ${NFL_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${NFL_POSTGRES_PASSWORD}
+    volumes:
+      - scorexl_nfl_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5439:5432"
+    networks:
+      - scorexl-network
+
+  # ════════════════════════════════════════════════════════════════════════
+  # NHL (new, 2026-07-24 — picks-only pilot, no Ticket/Bingo)
+  # ════════════════════════════════════════════════════════════════════════
+
+  scorexl-nhl-api:
+    container_name: scorexl-nhl-api
+    profiles: ["nhl"]
+    image: ghcr.io/devmacuacua/scorexl-nhl-api:latest
+    restart: always
+    ports:
+      - "13000:13000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 13000
+      JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-nhl-postgres:5432/${NHL_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${NHL_POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      API_NHL_API_KEY: ${API_NHL_API_KEY}
+      USER_API_URL: http://scorexl-user-api:9000
+    depends_on:
+      - scorexl-nhl-postgres
+      - scorexl-user-api
+    networks:
+      - scorexl-network
+
+  scorexl-nhl-postgres:
+    image: postgres:16
+    container_name: scorexl-nhl-postgres
+    profiles: ["nhl"]
+    restart: always
+    environment:
+      POSTGRES_DB: ${NHL_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${NHL_POSTGRES_PASSWORD}
+    volumes:
+      - scorexl_nhl_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5440:5432"
+    networks:
+      - scorexl-network
+
+  # ════════════════════════════════════════════════════════════════════════
   # WEB + USER API
   # ════════════════════════════════════════════════════════════════════════
 
@@ -437,6 +535,8 @@ volumes:
   scorexl_afl_postgres_data:
     external: true
     name: scorexl-afl-infra_scorexl_afl_postgres_data
+  scorexl_nfl_postgres_data:
+  scorexl_nhl_postgres_data:
   scorexl_user_postgres_data:
     external: true
     name: scorexl-web-infra_scorexl_user_postgres_data

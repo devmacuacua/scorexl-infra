@@ -14,7 +14,7 @@ set -e
 # any old infra repo's containers. Cutover from the old per-sport repos is a
 # separate, manual step — see README.md.
 
-VALID_SPORTS=(football basketball nba volleyball mlb afl)
+VALID_SPORTS=(football basketball nba volleyball mlb afl nfl nhl)
 SPORT=""
 
 case "$1" in
