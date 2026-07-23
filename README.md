@@ -131,9 +131,21 @@ big-bang swap of all six blocks at once:
    `USER_POSTGRES_PASSWORD` — **must be copied from the legacy repos'
    real (not `.example`) `.env` files on the droplet**, not invented, or the
    new containers won't be able to authenticate against the existing data.
-   Postgres user is now `scorexl` everywhere regardless of what the legacy
-   repo used. MLB/AFL/Volleyball have no legacy data to match, so any
-   strong password works for them.
+   **Also verify the actual DB name and username against a working DBeaver
+   connection (or equivalent) before assuming they match this repo's
+   defaults** — confirmed 2026-07-23 that football's real DB is named
+   `scorexl` (not `scorexl_football`, a holdover from when football was the
+   only sport) and `scorexl-user-api`'s real user is `postgres` (not
+   `scorexl` like every other sport) — both now hardcoded to match reality
+   in `docker-compose.yml`, but don't assume the legacy `.env.example` files
+   in those repos are accurate; they weren't. **The Postgres volumes must
+   also be pointed at the legacy repos' real volumes** — see the
+   `external: true` / `name:` overrides already in this repo's
+   `docker-compose.yml`'s `volumes:` block; Compose prefixes unnamed volumes
+   with the project directory name, so a fresh `scorexl-infra` checkout
+   creates brand-new empty volumes instead of reusing
+   `scorexl-<sport>-infra`'s unless told not to. MLB/AFL/Volleyball have no
+   legacy data to match, so any strong password works for them.
 2. **Pick one sport to cut over first** (e.g. football). Confirm nothing
    else currently depends on `scorexl-football-infra`'s specific container
    staying up mid-swap (it doesn't — every sport's API is independent).

@@ -397,7 +397,7 @@ services:
       SERVER_PORT: 9000
       JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
       SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-user-postgres:5432/scorexl_user
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${USER_POSTGRES_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
     depends_on:
@@ -411,7 +411,7 @@ services:
     restart: always
     environment:
       POSTGRES_DB: scorexl_user
-      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${USER_POSTGRES_PASSWORD}
     ports:
       - "5436:5432"
