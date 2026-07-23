@@ -95,6 +95,10 @@ scorexl-infra/
 | MLB        | `scorexl-mlb-postgres`                      | 5437         |
 | AFL        | `scorexl-afl-api`                           | 11000        |
 | AFL        | `scorexl-afl-postgres`                      | 5438         |
+| NFL        | `scorexl-nfl-api`                           | 12000        |
+| NFL        | `scorexl-nfl-postgres`                      | 5439         |
+| NHL        | `scorexl-nhl-api`                           | 13000        |
+| NHL        | `scorexl-nhl-postgres`                      | 5440         |
 | Web        | `scorexl-web`                               | 3000         |
 | Web        | `scorexl-user-api`                          | 9000         |
 | Web        | `scorexl-user-postgres`                     | 5436         |
