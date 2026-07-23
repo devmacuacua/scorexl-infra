@@ -60,7 +60,7 @@ services:
       - .env
     environment:
       SERVER_PORT: 4001
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "4001:4001"
     networks:
@@ -75,7 +75,7 @@ services:
       - .env
     environment:
       SERVER_PORT: 4002
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "4002:4002"
     networks:
@@ -90,7 +90,7 @@ services:
       - .env
     environment:
       SERVER_PORT: 4003
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "4003:4003"
     networks:
@@ -105,7 +105,7 @@ services:
       - .env
     environment:
       SERVER_PORT: 4004
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "4004:4004"
     networks:
@@ -132,7 +132,7 @@ services:
       # needs more metaspace headroom than the stateless engines it was
       # copied from — at 64m it OOM'd on metaspace while trying to *log* an
       # unrelated startup failure, masking the real error.
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=128m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=128m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
       # Note the missing underscore — the engine's own application.properties
       # reads apifootball.api-key=${APIFOOTBALL_API_KEY} (a naming typo baked
       # into the currently-published :latest image, predating this repo; the
@@ -159,7 +159,7 @@ services:
       - .env
     environment:
       SERVER_PORT: 4007
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "4007:4007"
     networks:
@@ -174,7 +174,7 @@ services:
       - .env
     environment:
       SERVER_PORT: 4010
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "4010:4010"
     networks:
@@ -189,7 +189,7 @@ services:
       - .env
     environment:
       SERVER_PORT: 4006
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "4006:4006"
     networks:
@@ -204,7 +204,7 @@ services:
       - .env
     environment:
       SERVER_PORT: 4008
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "4008:4008"
     networks:
@@ -219,7 +219,7 @@ services:
       - .env
     environment:
       SERVER_PORT: 4009
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "4009:4009"
     networks:
@@ -234,7 +234,7 @@ services:
       - .env
     environment:
       SERVER_PORT: 4011
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "4011:4011"
     networks:
@@ -286,7 +286,7 @@ services:
       - .env
     environment:
       SERVER_PORT: 5001
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "5001:5001"
     networks:
@@ -301,7 +301,7 @@ services:
       - .env
     environment:
       SERVER_PORT: 5002
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "5002:5002"
     networks:
@@ -316,7 +316,7 @@ services:
       - .env
     environment:
       SERVER_PORT: 5003
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "5003:5003"
     networks:
@@ -331,7 +331,7 @@ services:
       - .env
     environment:
       SERVER_PORT: 5004
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "5004:5004"
     networks:
@@ -346,7 +346,7 @@ services:
       - .env
     environment:
       SERVER_PORT: 5005
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "5005:5005"
     networks:
@@ -361,7 +361,7 @@ services:
       - .env
     environment:
       SERVER_PORT: 5006
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "5006:5006"
     networks:
@@ -376,7 +376,7 @@ services:
       - .env
     environment:
       SERVER_PORT: 5007
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "5007:5007"
     networks:
@@ -391,7 +391,7 @@ services:
       - .env
     environment:
       SERVER_PORT: 5008
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "5008:5008"
     networks:
@@ -406,7 +406,7 @@ services:
       - .env
     environment:
       SERVER_PORT: 5009
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "5009:5009"
     networks:
@@ -421,7 +421,7 @@ services:
       - .env
     environment:
       SERVER_PORT: 5010
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "5010:5010"
     networks:
@@ -488,7 +488,7 @@ services:
     env_file: [.env]
     environment:
       SERVER_PORT: 7001
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "7001:7001"
     networks:
@@ -502,7 +502,7 @@ services:
     env_file: [.env]
     environment:
       SERVER_PORT: 7002
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "7002:7002"
     networks:
@@ -516,7 +516,7 @@ services:
     env_file: [.env]
     environment:
       SERVER_PORT: 7003
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "7003:7003"
     networks:
@@ -530,7 +530,7 @@ services:
     env_file: [.env]
     environment:
       SERVER_PORT: 7004
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "7004:7004"
     networks:
@@ -544,7 +544,7 @@ services:
     env_file: [.env]
     environment:
       SERVER_PORT: 7005
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "7005:7005"
     networks:
@@ -558,7 +558,7 @@ services:
     env_file: [.env]
     environment:
       SERVER_PORT: 7006
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "7006:7006"
     networks:
@@ -572,7 +572,7 @@ services:
     env_file: [.env]
     environment:
       SERVER_PORT: 7007
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "7007:7007"
     networks:
@@ -586,7 +586,7 @@ services:
     env_file: [.env]
     environment:
       SERVER_PORT: 7008
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "7008:7008"
     networks:
@@ -600,7 +600,7 @@ services:
     env_file: [.env]
     environment:
       SERVER_PORT: 7009
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "7009:7009"
     networks:
@@ -614,7 +614,7 @@ services:
     env_file: [.env]
     environment:
       SERVER_PORT: 7010
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "7010:7010"
     networks:
@@ -628,7 +628,7 @@ services:
     env_file: [.env]
     environment:
       SERVER_PORT: 7011
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "7011:7011"
     networks:
@@ -642,7 +642,7 @@ services:
     env_file: [.env]
     environment:
       SERVER_PORT: 7012
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "7012:7012"
     networks:
@@ -718,7 +718,7 @@ services:
     environment:
       SERVER_PORT: 8001
       # -Xmx128m matching every other stateless engine's low heap cap.
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "8001:8001"
     networks:

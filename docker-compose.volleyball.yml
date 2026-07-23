@@ -42,7 +42,7 @@ services:
     restart: unless-stopped
     environment:
       SERVER_PORT: 8001
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
     ports:
       - "8001:8001"
     networks:
