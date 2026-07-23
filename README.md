@@ -125,12 +125,30 @@ big-bang swap of all six blocks at once:
 
 1. **Prep**: copy `.env.example` to `.env` on the droplet and fill in real
    values. `INTERNAL_API_KEY`, `GH_PACKAGES_TOKEN`, and the api-sports.io
-   keys can reuse whatever's already confirmed working. The four Postgres
-   passwords that matter most — `FOOTBALL_POSTGRES_PASSWORD`,
+   keys can reuse whatever's already confirmed working. Every sport's
+   Postgres password — `FOOTBALL_POSTGRES_PASSWORD`,
    `BASKETBALL_POSTGRES_PASSWORD`, `NBA_POSTGRES_PASSWORD`,
+   `MLB_POSTGRES_PASSWORD`, `AFL_POSTGRES_PASSWORD`,
    `USER_POSTGRES_PASSWORD` — **must be copied from the legacy repos'
-   real (not `.example`) `.env` files on the droplet**, not invented, or the
-   new containers won't be able to authenticate against the existing data.
+   real (not `.example`) `.env` files on the droplet before those repos are
+   deleted**, not invented, or the new containers won't be able to
+   authenticate against the existing data. Don't assume a sport has "no
+   legacy data to match" just because it's a recent pilot (Volleyball,
+   MLB, AFL) — check `docker volume ls | grep postgres` first; if a
+   `scorexl-<sport>-infra_...` volume already exists, that sport has real
+   data and needs its real password, the same as football/basketball/nba.
+   Discovered the hard way 2026-07-23: guessed fresh passwords for
+   MLB/AFL/Volleyball assuming no prior deploy, which caused an hours-long
+   Hibernate dialect-resolution crash loop (`Unable to determine Dialect
+   without JDBC metadata` — the real symptom of a failed DB login, not an
+   actual dialect problem) that pegged CPU on every restart. MLB/AFL turned
+   out to already use the account-wide `scorexl`/`scorexl` credential;
+   Volleyball's real password was lost when its legacy repo/`.env` were
+   deleted before being copied out, so its volume was abandoned and
+   recreated fresh (`external:`/`name:` removed from its entry in
+   `docker-compose.yml`'s `volumes:` block) — acceptable since it was a
+   brand-new pilot with negligible data, but **copy every password out
+   before deleting a legacy repo**, not after.
    **Also verify the actual DB name and username against a working DBeaver
    connection (or equivalent) before assuming they match this repo's
    defaults** — confirmed 2026-07-23 that football's real DB is named
@@ -140,12 +158,11 @@ big-bang swap of all six blocks at once:
    in `docker-compose.yml`, but don't assume the legacy `.env.example` files
    in those repos are accurate; they weren't. **The Postgres volumes must
    also be pointed at the legacy repos' real volumes** — see the
-   `external: true` / `name:` overrides already in this repo's
-   `docker-compose.yml`'s `volumes:` block; Compose prefixes unnamed volumes
-   with the project directory name, so a fresh `scorexl-infra` checkout
-   creates brand-new empty volumes instead of reusing
-   `scorexl-<sport>-infra`'s unless told not to. MLB/AFL/Volleyball have no
-   legacy data to match, so any strong password works for them.
+   `external: true` / `name:` overrides in this repo's `docker-compose.yml`'s
+   `volumes:` block (all except Volleyball's, now fresh); Compose prefixes
+   unnamed volumes with the project directory name, so a fresh
+   `scorexl-infra` checkout creates brand-new empty volumes instead of
+   reusing `scorexl-<sport>-infra`'s unless told not to.
 2. **Pick one sport to cut over first** (e.g. football). Confirm nothing
    else currently depends on `scorexl-football-infra`'s specific container
    staying up mid-swap (it doesn't — every sport's API is independent).
