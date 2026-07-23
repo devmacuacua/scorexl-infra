@@ -422,12 +422,26 @@ services:
 
 volumes:
   scorexl_football_postgres_data:
+    external: true
+    name: scorexl-football-infra_scorexl_football_postgres_data
   scorexl_basketball_postgres_data:
+    external: true
+    name: scorexl-basketball-infra_scorexl_basketball_postgres_data
   scorexl_nba_postgres_data:
+    external: true
+    name: scorexl-nba-infra_scorexl_nba_postgres_data
   scorexl_volleyball_postgres_data:
+    external: true
+    name: scorexl-volleyball-infra_scorexl_volleyball_postgres_data
   scorexl_mlb_postgres_data:
+    external: true
+    name: scorexl-mlb-infra_scorexl_mlb_postgres_data
   scorexl_afl_postgres_data:
+    external: true
+    name: scorexl-afl-infra_scorexl_afl_postgres_data
   scorexl_user_postgres_data:
+    external: true
+    name: scorexl-web-infra_scorexl_user_postgres_data
 
 networks:
   scorexl-network:
