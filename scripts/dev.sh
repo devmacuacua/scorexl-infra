@@ -18,7 +18,7 @@ set -e
 
 cd "$(dirname "$0")/.."
 
-VALID_SPORTS=(football basketball nba volleyball)
+VALID_SPORTS=(football basketball nba volleyball mlb afl)
 CMD="${1:-up}"
 ARG="${2:-}"
 

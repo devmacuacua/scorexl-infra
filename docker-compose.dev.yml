@@ -4,8 +4,8 @@
 # production always pulls prebuilt images from GHCR and is unaffected by
 # this file (production has no sibling source checkouts to build from).
 #
-# Regenerate if new services are added to docker-compose.yml (see the
-# generator invoked from scripts/dev.sh's `regen` subcommand).
+# Regenerate if new services are added to docker-compose.yml:
+#   ./scripts/dev.sh regen
 services:
   scorexl-football-api:
     build:
@@ -26,6 +26,14 @@ services:
   scorexl-volleyball-api:
     build:
       context: ../scorexl-volleyball-api
+    image: !reset null
+  scorexl-mlb-api:
+    build:
+      context: ../scorexl-mlb-api
+    image: !reset null
+  scorexl-afl-api:
+    build:
+      context: ../scorexl-afl-api
     image: !reset null
   scorexl-web:
     build:

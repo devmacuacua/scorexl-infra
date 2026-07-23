@@ -271,6 +271,104 @@ services:
       - scorexl-network
 
   # ════════════════════════════════════════════════════════════════════════
+  # MLB
+  # ════════════════════════════════════════════════════════════════════════
+
+  scorexl-mlb-api:
+    container_name: scorexl-mlb-api
+    profiles: ["mlb"]
+    image: ghcr.io/devmacuacua/scorexl-mlb-api:latest
+    restart: always
+    ports:
+      - "10000:10000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 10000
+      JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-mlb-postgres:5432/${MLB_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MLB_POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      API_MLB_API_KEY: ${API_MLB_API_KEY}
+      USER_API_URL: http://scorexl-user-api:9000
+    depends_on:
+      - scorexl-mlb-postgres
+      - scorexl-user-api
+    networks:
+      - scorexl-network
+
+  scorexl-mlb-postgres:
+    image: postgres:16
+    container_name: scorexl-mlb-postgres
+    profiles: ["mlb"]
+    restart: always
+    environment:
+      POSTGRES_DB: ${MLB_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${MLB_POSTGRES_PASSWORD}
+    volumes:
+      - scorexl_mlb_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5437:5432"
+    networks:
+      - scorexl-network
+
+  # ════════════════════════════════════════════════════════════════════════
+  # AFL
+  # ════════════════════════════════════════════════════════════════════════
+
+  scorexl-afl-api:
+    container_name: scorexl-afl-api
+    profiles: ["afl"]
+    image: ghcr.io/devmacuacua/scorexl-afl-api:latest
+    restart: always
+    ports:
+      - "11000:11000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 11000
+      JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-afl-postgres:5432/${AFL_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${AFL_POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      API_AFL_API_KEY: ${API_AFL_API_KEY}
+      USER_API_URL: http://scorexl-user-api:9000
+    depends_on:
+      - scorexl-afl-postgres
+      - scorexl-user-api
+    networks:
+      - scorexl-network
+
+  scorexl-afl-postgres:
+    image: postgres:16
+    container_name: scorexl-afl-postgres
+    profiles: ["afl"]
+    restart: always
+    environment:
+      POSTGRES_DB: ${AFL_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${AFL_POSTGRES_PASSWORD}
+    volumes:
+      - scorexl_afl_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5438:5432"
+    networks:
+      - scorexl-network
+
+  # ════════════════════════════════════════════════════════════════════════
   # WEB + USER API
   # ════════════════════════════════════════════════════════════════════════
 
@@ -327,6 +425,8 @@ volumes:
   scorexl_basketball_postgres_data:
   scorexl_nba_postgres_data:
   scorexl_volleyball_postgres_data:
+  scorexl_mlb_postgres_data:
+  scorexl_afl_postgres_data:
   scorexl_user_postgres_data:
 
 networks:
