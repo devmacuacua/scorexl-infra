@@ -1,0 +1,85 @@
+# Standalone Volleyball-only stack — just the 3 services this sport needs
+# (postgres + api + winner-engine), no shared network, no other sport's 40
+# services in the mix. Use this for focused local testing instead of the
+# full docker-compose.yml + docker-compose.dev.yml overlay.
+#
+# Builds directly from the sibling source checkouts (../scorexl-volleyball-api,
+# ../scorexl-volleyball-winner-engine) since those images don't exist on GHCR
+# yet — no need to wait for CI to test locally.
+#
+# Usage:
+#   cp .env .env.volleyball   # or hand-fill just the VOLLEYBALL_*/API_VOLLEYBALL_API_KEY/INTERNAL_API_KEY vars
+#   docker compose -f docker-compose.volleyball.yml --env-file .env.volleyball up --build
+#
+# Note: scorexl-volleyball-api normally also talks to scorexl-user-api (push
+# notifications / user features) — that's NOT included here to keep this
+# standalone. USER_API_URL is left pointing at a nonexistent host on purpose;
+# calls to it will just fail/log an error rather than crash the app, which is
+# fine for testing the core games/odds/pipeline/picks flow in isolation. Add
+# scorexl-user-api back in (see docker-compose.yml for its service block) if
+# you need push notifications working too.
+
+services:
+  volleyball-postgres:
+    image: postgres:16
+    container_name: volleyball-postgres-standalone
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${VOLLEYBALL_POSTGRES_DB:-scorexl_volleyball}
+      POSTGRES_USER: ${POSTGRES_USER:-scorexl}
+      POSTGRES_PASSWORD: ${VOLLEYBALL_POSTGRES_PASSWORD:?set VOLLEYBALL_POSTGRES_PASSWORD}
+    volumes:
+      - volleyball_standalone_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    networks:
+      - volleyball-standalone
+
+  volleyball-winner-engine:
+    build:
+      context: ../scorexl-volleyball-winner-engine
+    container_name: volleyball-winner-engine-standalone
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8001
+      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=64m -Xss256k"
+    ports:
+      - "8001:8001"
+    networks:
+      - volleyball-standalone
+
+  volleyball-api:
+    build:
+      context: ../scorexl-volleyball-api
+    container_name: volleyball-api-standalone
+    restart: unless-stopped
+    depends_on:
+      - volleyball-postgres
+      - volleyball-winner-engine
+    ports:
+      - "8000:8000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    environment:
+      SERVER_PORT: 8000
+      JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://volleyball-postgres:5432/${VOLLEYBALL_POSTGRES_DB:-scorexl_volleyball}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-scorexl}
+      SPRING_DATASOURCE_PASSWORD: ${VOLLEYBALL_POSTGRES_PASSWORD:?set VOLLEYBALL_POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-dev-local-key}
+      API_VOLLEYBALL_API_KEY: ${API_VOLLEYBALL_API_KEY:?set API_VOLLEYBALL_API_KEY}
+      VOLLEYBALL_WINNER_ENGINE_URL: http://volleyball-winner-engine:8001
+      # Intentionally not a real host — see note at top of file.
+      USER_API_URL: http://scorexl-user-api-not-running:9000
+    networks:
+      - volleyball-standalone
+
+networks:
+  volleyball-standalone:
+    driver: bridge
+
+volumes:
+  volleyball_standalone_postgres_data:
