@@ -467,6 +467,57 @@ services:
       - scorexl-network
 
   # ════════════════════════════════════════════════════════════════════════
+  # Rugby (new, 2026-07-24 — bets-generation pilot: games+odds+winner/spread/
+  # totals only, no market-toggle/push/settlement yet)
+  # ════════════════════════════════════════════════════════════════════════
+
+  scorexl-rugby-api:
+    container_name: scorexl-rugby-api
+    profiles: ["rugby"]
+    image: ghcr.io/devmacuacua/scorexl-rugby-api:latest
+    restart: always
+    ports:
+      - "14000:14000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 14000
+      JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-rugby-postgres:5432/${RUGBY_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${RUGBY_POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      API_RUGBY_API_KEY: ${API_RUGBY_API_KEY}
+      RUGBY_LEAGUE_IDS: ${RUGBY_LEAGUE_IDS}
+      USER_API_URL: http://scorexl-user-api:9000
+    depends_on:
+      - scorexl-rugby-postgres
+      - scorexl-user-api
+    networks:
+      - scorexl-network
+
+  scorexl-rugby-postgres:
+    image: postgres:16
+    container_name: scorexl-rugby-postgres
+    profiles: ["rugby"]
+    restart: always
+    environment:
+      POSTGRES_DB: ${RUGBY_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${RUGBY_POSTGRES_PASSWORD}
+    volumes:
+      - scorexl_rugby_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5441:5432"
+    networks:
+      - scorexl-network
+
+  # ════════════════════════════════════════════════════════════════════════
   # WEB + USER API
   # ════════════════════════════════════════════════════════════════════════
 
@@ -537,6 +588,7 @@ volumes:
     name: scorexl-afl-infra_scorexl_afl_postgres_data
   scorexl_nfl_postgres_data:
   scorexl_nhl_postgres_data:
+  scorexl_rugby_postgres_data:
   scorexl_user_postgres_data:
     external: true
     name: scorexl-web-infra_scorexl_user_postgres_data
