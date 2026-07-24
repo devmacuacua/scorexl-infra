@@ -51,6 +51,14 @@ services:
     build:
       context: ../scorexl-handball-api
     image: !reset null
+  scorexl-f1-api:
+    build:
+      context: ../scorexl-f1-api
+    image: !reset null
+  scorexl-mma-api:
+    build:
+      context: ../scorexl-mma-api
+    image: !reset null
   scorexl-web:
     build:
       context: ../scorexl-web

@@ -572,6 +572,108 @@ services:
       - scorexl-network
 
   # ════════════════════════════════════════════════════════════════════════
+  # Formula-1 (new, 2026-07-24 — predictions only, no odds: /odds does not
+  # exist at all on this provider. RacePrediction is graded correct/
+  # incorrect, no ValueBet/Ticket-of-Day/Bingo.)
+  # ════════════════════════════════════════════════════════════════════════
+
+  scorexl-f1-api:
+    container_name: scorexl-f1-api
+    profiles: ["f1"]
+    image: ghcr.io/devmacuacua/scorexl-f1-api:latest
+    restart: always
+    ports:
+      - "16000:16000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 16000
+      JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-f1-postgres:5432/${F1_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${F1_POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      API_F1_API_KEY: ${API_F1_API_KEY}
+      USER_API_URL: http://scorexl-user-api:9000
+    depends_on:
+      - scorexl-f1-postgres
+      - scorexl-user-api
+    networks:
+      - scorexl-network
+
+  scorexl-f1-postgres:
+    image: postgres:16
+    container_name: scorexl-f1-postgres
+    profiles: ["f1"]
+    restart: always
+    environment:
+      POSTGRES_DB: ${F1_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${F1_POSTGRES_PASSWORD}
+    volumes:
+      - scorexl_f1_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5443:5432"
+    networks:
+      - scorexl-network
+
+  # ════════════════════════════════════════════════════════════════════════
+  # MMA (new, 2026-07-24 — predictions only: /odds exists but returned zero
+  # actual odds rows for every fight tried, a Free-plan coverage gap.
+  # FightPrediction graded correct/incorrect, no ValueBet/Ticket-of-Day/Bingo.)
+  # ════════════════════════════════════════════════════════════════════════
+
+  scorexl-mma-api:
+    container_name: scorexl-mma-api
+    profiles: ["mma"]
+    image: ghcr.io/devmacuacua/scorexl-mma-api:latest
+    restart: always
+    ports:
+      - "17000:17000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 17000
+      JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-mma-postgres:5432/${MMA_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MMA_POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      API_MMA_API_KEY: ${API_MMA_API_KEY}
+      USER_API_URL: http://scorexl-user-api:9000
+    depends_on:
+      - scorexl-mma-postgres
+      - scorexl-user-api
+    networks:
+      - scorexl-network
+
+  scorexl-mma-postgres:
+    image: postgres:16
+    container_name: scorexl-mma-postgres
+    profiles: ["mma"]
+    restart: always
+    environment:
+      POSTGRES_DB: ${MMA_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${MMA_POSTGRES_PASSWORD}
+    volumes:
+      - scorexl_mma_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5444:5432"
+    networks:
+      - scorexl-network
+
+  # ════════════════════════════════════════════════════════════════════════
   # WEB + USER API
   # ════════════════════════════════════════════════════════════════════════
 
@@ -644,6 +746,8 @@ volumes:
   scorexl_nhl_postgres_data:
   scorexl_rugby_postgres_data:
   scorexl_handball_postgres_data:
+  scorexl_f1_postgres_data:
+  scorexl_mma_postgres_data:
   scorexl_user_postgres_data:
     external: true
     name: scorexl-web-infra_scorexl_user_postgres_data
