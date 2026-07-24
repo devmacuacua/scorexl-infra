@@ -101,6 +101,8 @@ scorexl-infra/
 | NHL        | `scorexl-nhl-postgres`                      | 5440         |
 | Rugby      | `scorexl-rugby-api`                         | 14000        |
 | Rugby      | `scorexl-rugby-postgres`                    | 5441         |
+| Handball   | `scorexl-handball-api`                      | 15000        |
+| Handball   | `scorexl-handball-postgres`                 | 5442         |
 | Web        | `scorexl-web`                               | 3000         |
 | Web        | `scorexl-user-api`                          | 9000         |
 | Web        | `scorexl-user-postgres`                     | 5436         |

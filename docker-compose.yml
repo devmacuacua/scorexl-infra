@@ -518,6 +518,60 @@ services:
       - scorexl-network
 
   # ════════════════════════════════════════════════════════════════════════
+  # Handball (new, 2026-07-24 — full stack scaffolded same day as Rugby's
+  # frontend: games+odds+winner/spread/totals engines, settlement/push/
+  # narrative/prediction-health, Ticket-of-Day/Bingo. No real API key or
+  # confirmed league id existed when this was built — HANDBALL_LEAGUE_IDS
+  # ships empty in .env.example, a safe no-op until the user populates it.)
+  # ════════════════════════════════════════════════════════════════════════
+
+  scorexl-handball-api:
+    container_name: scorexl-handball-api
+    profiles: ["handball"]
+    image: ghcr.io/devmacuacua/scorexl-handball-api:latest
+    restart: always
+    ports:
+      - "15000:15000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 15000
+      JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-handball-postgres:5432/${HANDBALL_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${HANDBALL_POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      API_HANDBALL_API_KEY: ${API_HANDBALL_API_KEY}
+      HANDBALL_LEAGUE_IDS: ${HANDBALL_LEAGUE_IDS}
+      USER_API_URL: http://scorexl-user-api:9000
+    depends_on:
+      - scorexl-handball-postgres
+      - scorexl-user-api
+    networks:
+      - scorexl-network
+
+  scorexl-handball-postgres:
+    image: postgres:16
+    container_name: scorexl-handball-postgres
+    profiles: ["handball"]
+    restart: always
+    environment:
+      POSTGRES_DB: ${HANDBALL_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${HANDBALL_POSTGRES_PASSWORD}
+    volumes:
+      - scorexl_handball_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5442:5432"
+    networks:
+      - scorexl-network
+
+  # ════════════════════════════════════════════════════════════════════════
   # WEB + USER API
   # ════════════════════════════════════════════════════════════════════════
 
@@ -589,6 +643,7 @@ volumes:
   scorexl_nfl_postgres_data:
   scorexl_nhl_postgres_data:
   scorexl_rugby_postgres_data:
+  scorexl_handball_postgres_data:
   scorexl_user_postgres_data:
     external: true
     name: scorexl-web-infra_scorexl_user_postgres_data
