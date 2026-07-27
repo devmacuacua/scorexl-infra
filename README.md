@@ -72,6 +72,7 @@ scorexl-infra/
     mlb-api.scorexl.com.conf
     afl-api.scorexl.com.conf
     scorexl.com.conf                  # web — distinct filename, fixes the "default" collision bug
+    analytics.scorexl.com.conf        # self-hosted Umami dashboard
   scripts/
     bootstrap.sh    # installs docker/nginx, symlinks nginx/*.conf into sites-available + sites-enabled
     deploy.sh        # docker compose pull && up -d, whole stack or one sport via --profile/arg

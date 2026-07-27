@@ -725,6 +725,43 @@ services:
     networks:
       - scorexl-network
 
+  # ════════════════════════════════════════════════════════════════════════
+  # ANALYTICS (Umami — self-hosted, 2026-07-27)
+  # ════════════════════════════════════════════════════════════════════════
+
+  # No profile, like web/user-api above: analytics isn't per-sport, so it
+  # should always be up regardless of which --profile flags a deploy uses.
+  scorexl-umami:
+    container_name: scorexl-umami
+    image: ghcr.io/umami-software/umami:postgresql-latest
+    restart: always
+    ports:
+      - "18000:3000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${UMAMI_POSTGRES_PASSWORD}@scorexl-umami-postgres:5432/${UMAMI_POSTGRES_DB}
+      APP_SECRET: ${UMAMI_APP_SECRET}
+    depends_on:
+      - scorexl-umami-postgres
+    networks:
+      - scorexl-network
+
+  scorexl-umami-postgres:
+    image: postgres:16
+    container_name: scorexl-umami-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${UMAMI_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${UMAMI_POSTGRES_PASSWORD}
+    volumes:
+      - scorexl_umami_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5445:5432"
+    networks:
+      - scorexl-network
+
 volumes:
   scorexl_football_postgres_data:
     external: true
@@ -751,6 +788,7 @@ volumes:
   scorexl_user_postgres_data:
     external: true
     name: scorexl-web-infra_scorexl_user_postgres_data
+  scorexl_umami_postgres_data:
 
 networks:
   scorexl-network:
