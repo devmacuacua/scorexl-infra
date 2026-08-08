@@ -1,1 +1,4 @@
-CREATE DATABASE scorexl_football_live;
+-- Used to create scorexl_football_live for the live-opportunities engine,
+-- discontinued and dropped 2026-08-08 (see docker-compose.yml). Left as an
+-- empty init script rather than removing the file, since docker-compose.yml
+-- still mounts it into /docker-entrypoint-initdb.d/init.sql.
