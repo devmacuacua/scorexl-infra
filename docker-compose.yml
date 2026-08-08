@@ -57,46 +57,11 @@ services:
   # f883d23) — stateless, internally-called-only engines folded in as
   # in-process code instead of 10 separate JVM processes.
   #
-  # live-opportunities-engine stays separate — unlike the other 10 it's
-  # stateful (own Postgres datasource, JPA, internal scheduler), driven by
-  # football-api's LiveOpportunityTriggerService, which only ever asks it
-  # to process specific fixture IDs (ones with a published pre-match
-  # pick), not a blanket "every live fixture worldwide" sweep. Its own
-  # internal scheduler stays disabled (SCOREXL_LIVE_SCHEDULER_ENABLED=false)
-  # — football-api decides when/which now. See football-api's
-  # scorexl.live-opportunities.enabled (off by default) for the actual
-  # on/off switch.
-  scorexl-football-live-opportunities-engine:
-    container_name: scorexl-football-live-opportunities-engine
-    profiles: ["football"]
-    image: ghcr.io/devmacuacua/scorexl-football-live-opportunities-engine:latest
-    restart: always
-    env_file:
-      - .env
-    environment:
-      SERVER_PORT: 4005
-      # Higher than the other engines' 64m: this is the only lightweight
-      # engine that also loads JPA/Hibernate (own datasource below), which
-      # needs more metaspace headroom than the stateless engines it was
-      # copied from — at 64m it OOM'd on metaspace while trying to *log* an
-      # unrelated startup failure, masking the real error.
-      JAVA_TOOL_OPTIONS: "-Xmx128m -XX:MaxMetaspaceSize=128m -Xss256k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -Djava.awt.headless=true"
-      # Note the missing underscore — the engine's own application.properties
-      # reads apifootball.api-key=${APIFOOTBALL_API_KEY} (a naming typo baked
-      # into the currently-published :latest image, predating this repo; the
-      # engine's GitHub repo is gone so the source can't be fixed/rebuilt —
-      # matching the container env var name here is the only fix available).
-      APIFOOTBALL_API_KEY: ${API_FOOTBALL_API_KEY}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-football-postgres:5432/scorexl_football_live
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${FOOTBALL_POSTGRES_PASSWORD}
-      SCOREXL_LIVE_SCHEDULER_ENABLED: "false"
-    ports:
-      - "4005:4005"
-    depends_on:
-      - scorexl-football-postgres
-    networks:
-      - scorexl-network
+  # live-opportunities-engine discontinued 2026-08-08 — football-api no
+  # longer calls it (LiveOpportunityTriggerService and the whole
+  # live-monitoring feature were removed). Container definition dropped;
+  # the standalone engine's own GitHub repo/source is untouched, left for
+  # manual deletion later.
 
   # ════════════════════════════════════════════════════════════════════════
   # BASKETBALL

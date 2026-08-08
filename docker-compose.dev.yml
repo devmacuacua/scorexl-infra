@@ -11,10 +11,6 @@ services:
     build:
       context: ../scorexl-football-api
     image: !reset null
-  scorexl-football-live-opportunities-engine:
-    build:
-      context: ../scorexl-football-live-opportunities-engine
-    image: !reset null
   scorexl-basketball-api:
     build:
       context: ../scorexl-basketball-api

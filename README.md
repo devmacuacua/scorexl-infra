@@ -52,9 +52,10 @@ runaway query in one sport's schema can't touch another sport's data.
 **Market engines are not separate containers.** As of 2026-07-23, every
 sport's market-calculation engines (handicap, over/under, spread, totals,
 etc.) were merged into that sport's own API as in-process code — eliminating
-the per-engine JVM overhead and the internal HTTP hop. The one exception is
-`scorexl-football-live-opportunities-engine`, kept separate because it's
-stateful (own datasource + scheduler).
+the per-engine JVM overhead and the internal HTTP hop. `scorexl-football-
+live-opportunities-engine` was kept separate for the same stateful reasons,
+but the feature it backed was discontinued 2026-08-08 and its container
+dropped from docker-compose — the standalone repo itself is untouched.
 
 ## Structure
 
@@ -62,8 +63,7 @@ stateful (own datasource + scheduler).
 scorexl-infra/
   docker-compose.yml   # shared network + all postgres + all api services
   .env.example          # reconciled superset of all legacy .env.example files
-  docker/postgres/      # init.sql per sport (only football's does anything: it also
-                         # creates scorexl_football_live for the live-opportunities engine)
+  docker/postgres/      # init.sql per sport
   nginx/
     api.scorexl.com.conf              # football api
     basketball-api.scorexl.com.conf
@@ -84,7 +84,6 @@ scorexl-infra/
 | Sport      | Service                                    | Host port(s) |
 |------------|---------------------------------------------|--------------|
 | Football   | `scorexl-football-api`                      | 4000         |
-| Football   | `scorexl-football-live-opportunities-engine`| 4005         |
 | Football   | `scorexl-football-postgres`                 | 5432         |
 | Basketball | `scorexl-basketball-api`                    | 5000         |
 | Basketball | `scorexl-basketball-postgres`               | 5433         |
