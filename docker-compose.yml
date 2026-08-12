@@ -145,7 +145,7 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: "false"
       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
-      API_NBA_KEY: ${API_NBA_KEY}
+      API_SPORTS_KEY: ${API_SPORTS_KEY}
     depends_on:
       - scorexl-nba-postgres
     networks:
@@ -203,7 +203,7 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: "false"
       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
-      API_VOLLEYBALL_API_KEY: ${API_VOLLEYBALL_API_KEY}
+      API_SPORTS_KEY: ${API_SPORTS_KEY}
       USER_API_URL: http://scorexl-user-api:9000
     depends_on:
       - scorexl-volleyball-postgres
@@ -309,7 +309,7 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: "false"
       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
-      API_AFL_API_KEY: ${API_AFL_API_KEY}
+      API_SPORTS_KEY: ${API_SPORTS_KEY}
       USER_API_URL: http://scorexl-user-api:9000
     depends_on:
       - scorexl-afl-postgres
@@ -358,7 +358,7 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: "false"
       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
-      API_NFL_API_KEY: ${API_NFL_API_KEY}
+      API_SPORTS_KEY: ${API_SPORTS_KEY}
       USER_API_URL: http://scorexl-user-api:9000
     depends_on:
       - scorexl-nfl-postgres
@@ -407,7 +407,7 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: "false"
       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
-      API_NHL_API_KEY: ${API_NHL_API_KEY}
+      API_SPORTS_KEY: ${API_SPORTS_KEY}
       USER_API_URL: http://scorexl-user-api:9000
     depends_on:
       - scorexl-nhl-postgres
@@ -457,7 +457,7 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: "false"
       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
-      API_RUGBY_API_KEY: ${API_RUGBY_API_KEY}
+      API_SPORTS_KEY: ${API_SPORTS_KEY}
       RUGBY_LEAGUE_IDS: ${RUGBY_LEAGUE_IDS}
       USER_API_URL: http://scorexl-user-api:9000
     depends_on:
@@ -511,7 +511,7 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: "false"
       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
-      API_HANDBALL_API_KEY: ${API_HANDBALL_API_KEY}
+      API_SPORTS_KEY: ${API_SPORTS_KEY}
       HANDBALL_LEAGUE_IDS: ${HANDBALL_LEAGUE_IDS}
       USER_API_URL: http://scorexl-user-api:9000
     depends_on:
@@ -563,7 +563,7 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: "false"
       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
-      API_F1_API_KEY: ${API_F1_API_KEY}
+      API_SPORTS_KEY: ${API_SPORTS_KEY}
       USER_API_URL: http://scorexl-user-api:9000
     depends_on:
       - scorexl-f1-postgres
@@ -614,7 +614,7 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: "false"
       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
-      API_MMA_API_KEY: ${API_MMA_API_KEY}
+      API_SPORTS_KEY: ${API_SPORTS_KEY}
       USER_API_URL: http://scorexl-user-api:9000
     depends_on:
       - scorexl-mma-postgres
