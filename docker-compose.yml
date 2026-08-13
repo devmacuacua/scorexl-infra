@@ -260,7 +260,6 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: "false"
       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
-      API_MLB_API_KEY: ${API_MLB_API_KEY}
       USER_API_URL: http://scorexl-user-api:9000
     depends_on:
       - scorexl-mlb-postgres
