@@ -457,7 +457,6 @@ services:
       SPRING_JPA_SHOW_SQL: "false"
       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
       API_SPORTS_KEY: ${API_SPORTS_KEY}
-      RUGBY_LEAGUE_IDS: ${RUGBY_LEAGUE_IDS}
       USER_API_URL: http://scorexl-user-api:9000
     depends_on:
       - scorexl-rugby-postgres
@@ -484,9 +483,9 @@ services:
   # ════════════════════════════════════════════════════════════════════════
   # Handball (new, 2026-07-24 — full stack scaffolded same day as Rugby's
   # frontend: games+odds+winner/spread/totals engines, settlement/push/
-  # narrative/prediction-health, Ticket-of-Day/Bingo. No real API key or
-  # confirmed league id existed when this was built — HANDBALL_LEAGUE_IDS
-  # ships empty in .env.example, a safe no-op until the user populates it.)
+  # narrative/prediction-health, Ticket-of-Day/Bingo. 2026-08-25: removed the
+  # league-id allowlist that used to gate this sport's sync — still early
+  # enough that every league should sync, no restrictive whitelist.)
   # ════════════════════════════════════════════════════════════════════════
 
   scorexl-handball-api:
@@ -511,7 +510,6 @@ services:
       SPRING_JPA_SHOW_SQL: "false"
       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
       API_SPORTS_KEY: ${API_SPORTS_KEY}
-      HANDBALL_LEAGUE_IDS: ${HANDBALL_LEAGUE_IDS}
       USER_API_URL: http://scorexl-user-api:9000
     depends_on:
       - scorexl-handball-postgres
