@@ -18,7 +18,11 @@ set -e
 
 cd "$(dirname "$0")/.."
 
-VALID_SPORTS=(football basketball nba volleyball mlb afl nfl nhl rugby handball f1 mma)
+# afl/nfl/nhl/rugby/handball/f1/mma removed 2026-09-07 — never produced a
+# single value_bet, commented out in docker-compose.yml, no point deploying
+# them by default. Re-add here (and uncomment their compose blocks) if
+# revisited.
+VALID_SPORTS=(football basketball nba volleyball mlb)
 CMD="${1:-up}"
 ARG="${2:-}"
 
