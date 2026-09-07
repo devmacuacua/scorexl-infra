@@ -61,6 +61,13 @@ for name, block in services:
     cname = m.group(1)
     if "postgres" in cname:
         continue
+    # scorexl-web is never built locally via this overlay — run it directly
+    # in VS Code (its own dev server) instead of through Docker, per user
+    # workflow (2026-09-07). It still has a real, uncommented block in
+    # docker-compose.yml (needed for production), just excluded from this
+    # dev build-context regeneration.
+    if name == "scorexl-web":
+        continue
     lines.append(f"  {name}:")
     lines.append(f"    build:")
     lines.append(f"      context: ../{cname}")
