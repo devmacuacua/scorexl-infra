@@ -68,10 +68,30 @@ for name, block in services:
     # dev build-context regeneration.
     if name == "scorexl-web":
         continue
+    # scorexl-umami runs the prebuilt ghcr.io/umami-software/umami image —
+    # there's no sibling scorexl-umami source checkout to build from, so it
+    # can't get a build-context override like the sport services (2026-09-07).
+    if name == "scorexl-umami":
+        continue
     lines.append(f"  {name}:")
     lines.append(f"    build:")
     lines.append(f"      context: ../{cname}")
     lines.append(f"    image: !reset null")
+
+# Postgres volumes in docker-compose.yml are pinned external:true, pointing
+# at the legacy per-sport infra repos' real production volumes (see
+# README's migration/cutover section) — those never exist on a dev laptop,
+# so local `up` fails with "external volume ... not found". Override each
+# external volume to a plain local one here so dev gets fresh empty
+# databases instead (2026-09-07).
+vol_section = re.search(r'^volumes:\n((?:  .+\n?)+)', content, re.MULTILINE).group(1)
+vol_blocks = re.findall(r'^  (\S+):\n((?:    .+\n?)*)', vol_section, re.MULTILINE)
+external_vols = [name for name, block in vol_blocks if "external: true" in block]
+if external_vols:
+    lines.append("volumes:")
+    for v in external_vols:
+        lines.append(f"  {v}:")
+        lines.append(f"    external: false")
 open("docker-compose.dev.yml", "w").write("\n".join(lines) + "\n")
 print("wrote docker-compose.dev.yml")
 PYEOF

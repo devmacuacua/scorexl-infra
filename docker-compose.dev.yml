@@ -31,7 +31,16 @@ services:
     build:
       context: ../scorexl-user-api
     image: !reset null
-  scorexl-umami:
-    build:
-      context: ../scorexl-umami
-    image: !reset null
+volumes:
+  scorexl_football_postgres_data:
+    external: false
+  scorexl_basketball_postgres_data:
+    external: false
+  scorexl_nba_postgres_data:
+    external: false
+  scorexl_mlb_postgres_data:
+    external: false
+  scorexl_afl_postgres_data:
+    external: false
+  scorexl_user_postgres_data:
+    external: false
