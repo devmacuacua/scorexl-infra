@@ -103,13 +103,15 @@ PYEOF
         echo "Unknown sport '$SPORT'. Valid options: ${VALID_SPORTS[*]}" >&2
         exit 1
       fi
-      echo "Building + starting: $SPORT (+ always-on web/user-api)"
-      compose --profile "$SPORT" up -d --build
+      echo "Building + starting: $SPORT (+ always-on user-api — web runs separately in VS Code)"
+      SERVICES=$(compose --profile "$SPORT" config --services | grep -v '^scorexl-web$')
+      compose --profile "$SPORT" up -d --build $SERVICES
     else
-      echo "Building + starting everything (all sports + web)"
+      echo "Building + starting everything (all sports — web runs separately in VS Code)"
       COMPOSE_ARGS=()
       for s in "${VALID_SPORTS[@]}"; do COMPOSE_ARGS+=(--profile "$s"); done
-      compose "${COMPOSE_ARGS[@]}" up -d --build --remove-orphans
+      SERVICES=$(compose "${COMPOSE_ARGS[@]}" config --services | grep -v '^scorexl-web$')
+      compose "${COMPOSE_ARGS[@]}" up -d --build --remove-orphans $SERVICES
     fi
     echo
     echo "Running containers:"
