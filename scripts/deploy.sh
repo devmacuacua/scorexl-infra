@@ -14,11 +14,12 @@ set -e
 # any old infra repo's containers. Cutover from the old per-sport repos is a
 # separate, manual step — see README.md.
 
-# afl/nfl/nhl/rugby/handball/f1/mma removed 2026-09-07 — never produced a
+# afl/nhl/rugby/handball/f1/mma removed 2026-09-07 — never produced a
 # single value_bet, commented out in docker-compose.yml, no point deploying
 # them by default. Re-add here (and uncomment their compose blocks) if
-# revisited.
-VALID_SPORTS=(football basketball nba volleyball mlb)
+# revisited. nfl re-added 2026-09-09 — pipeline-trigger bug fixed, real
+# picks confirmed flowing.
+VALID_SPORTS=(football basketball nba volleyball mlb nfl)
 SPORT=""
 
 case "$1" in

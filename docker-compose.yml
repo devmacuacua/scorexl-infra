@@ -284,13 +284,20 @@ services:
       - scorexl-network
 
   # ════════════════════════════════════════════════════════════════════════
-  # AFL / NFL / NHL / Rugby / Handball / F1 / MMA — DISABLED 2026-09-07
+  # AFL / NHL / Rugby / Handball / F1 / MMA — DISABLED 2026-09-07
   # Never produced a single value_bet across their entire history; already
   # hidden from the web menu (dead-sports-menu-hidden). Commented out here
   # so a blanket deploy/dev run doesn't waste resources or API-Sports quota
   # starting containers for sports that generate nothing. Also removed from
   # VALID_SPORTS in scripts/deploy.sh and scripts/dev.sh. Uncomment (and
   # re-add to VALID_SPORTS) if any of these are ever revisited.
+  #
+  # NFL re-enabled 2026-09-09: root cause of zero picks was a
+  # SyncAllService pipeline-trigger bug (gated on odds existence instead
+  # of an active pick), not lack of demand or odds coverage — fixed in
+  # scorexl-nfl-api, verified producing real picks for the 2026 season
+  # opener. Re-added to VALID_SPORTS in scripts/deploy.sh and
+  # scripts/dev.sh and to the web nav (see SportsNav.tsx).
   # ════════════════════════════════════════════════════════════════════════
 #   # ════════════════════════════════════════════════════════════════════════
 #   # AFL
@@ -341,54 +348,54 @@ services:
 #     networks:
 #       - scorexl-network
 
-#   # ════════════════════════════════════════════════════════════════════════
-#   # NFL (new, 2026-07-24 — picks-only pilot, no Ticket/Bingo)
-#   # ════════════════════════════════════════════════════════════════════════
+  # ════════════════════════════════════════════════════════════════════════
+  # NFL (new, 2026-07-24 — picks-only pilot, no Ticket/Bingo)
+  # ════════════════════════════════════════════════════════════════════════
 
-#   scorexl-nfl-api:
-#     container_name: scorexl-nfl-api
-#     profiles: ["nfl"]
-#     image: ghcr.io/devmacuacua/scorexl-nfl-api:latest
-#     restart: always
-#     ports:
-#       - "12000:12000"
-#     dns:
-#       - 8.8.8.8
-#       - 8.8.4.4
-#     env_file:
-#       - .env
-#     environment:
-#       SERVER_PORT: 12000
-#       JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
-#       SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-nfl-postgres:5432/${NFL_POSTGRES_DB}
-#       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-#       SPRING_DATASOURCE_PASSWORD: ${NFL_POSTGRES_PASSWORD}
-#       SPRING_JPA_HIBERNATE_DDL_AUTO: update
-#       SPRING_JPA_SHOW_SQL: "false"
-#       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
-#       API_SPORTS_KEY: ${API_SPORTS_KEY}
-#       USER_API_URL: http://scorexl-user-api:9000
-#     depends_on:
-#       - scorexl-nfl-postgres
-#       - scorexl-user-api
-#     networks:
-#       - scorexl-network
+  scorexl-nfl-api:
+    container_name: scorexl-nfl-api
+    profiles: ["nfl"]
+    image: ghcr.io/devmacuacua/scorexl-nfl-api:latest
+    restart: always
+    ports:
+      - "12000:12000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 12000
+      JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-nfl-postgres:5432/${NFL_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${NFL_POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      API_SPORTS_KEY: ${API_SPORTS_KEY}
+      USER_API_URL: http://scorexl-user-api:9000
+    depends_on:
+      - scorexl-nfl-postgres
+      - scorexl-user-api
+    networks:
+      - scorexl-network
 
-#   scorexl-nfl-postgres:
-#     image: postgres:16
-#     container_name: scorexl-nfl-postgres
-#     profiles: ["nfl"]
-#     restart: always
-#     environment:
-#       POSTGRES_DB: ${NFL_POSTGRES_DB}
-#       POSTGRES_USER: ${POSTGRES_USER}
-#       POSTGRES_PASSWORD: ${NFL_POSTGRES_PASSWORD}
-#     volumes:
-#       - scorexl_nfl_postgres_data:/var/lib/postgresql/data
-#     ports:
-#       - "5439:5432"
-#     networks:
-#       - scorexl-network
+  scorexl-nfl-postgres:
+    image: postgres:16
+    container_name: scorexl-nfl-postgres
+    profiles: ["nfl"]
+    restart: always
+    environment:
+      POSTGRES_DB: ${NFL_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${NFL_POSTGRES_PASSWORD}
+    volumes:
+      - scorexl_nfl_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5439:5432"
+    networks:
+      - scorexl-network
 
 #   # ════════════════════════════════════════════════════════════════════════
 #   # NHL (new, 2026-07-24 — picks-only pilot, no Ticket/Bingo)
