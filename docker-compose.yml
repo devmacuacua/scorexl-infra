@@ -284,69 +284,75 @@ services:
       - scorexl-network
 
   # ════════════════════════════════════════════════════════════════════════
-  # AFL / NHL / Rugby / Handball / F1 / MMA — DISABLED 2026-09-07
-  # Never produced a single value_bet across their entire history; already
-  # hidden from the web menu (dead-sports-menu-hidden). Commented out here
-  # so a blanket deploy/dev run doesn't waste resources or API-Sports quota
-  # starting containers for sports that generate nothing. Also removed from
-  # VALID_SPORTS in scripts/deploy.sh and scripts/dev.sh. Uncomment (and
-  # re-add to VALID_SPORTS) if any of these are ever revisited.
+  # AFL / NHL / Rugby / Handball / F1 / MMA — disabled 2026-09-07 (never
+  # produced a single value_bet across their entire history), re-enabled
+  # 2026-09-11 at direct user instruction.
   #
   # NFL re-enabled 2026-09-09: root cause of zero picks was a
   # SyncAllService pipeline-trigger bug (gated on odds existence instead
   # of an active pick), not lack of demand or odds coverage — fixed in
   # scorexl-nfl-api, verified producing real picks for the 2026 season
-  # opener. Re-added to VALID_SPORTS in scripts/deploy.sh and
-  # scripts/dev.sh and to the web nav (see SportsNav.tsx).
+  # opener.
+  #
+  # AFL/NHL/Rugby/Handball/F1/MMA re-enabled 2026-09-11 without the same
+  # verification NFL got — as of the 2026-09-10 platform audit: AFL/NHL
+  # have ~zero real odds coverage from the provider (AFL) or are off-season
+  # until October (NHL); Rugby/Handball weren't independently confirmed to
+  # have odds coverage either; F1/MMA are predictions-only (no odds
+  # endpoint / a Free-plan coverage gap) and their deploy tooling
+  # (scripts/deploy.sh's VALID_SPORTS) didn't even include them. Restore
+  # VALID_SPORTS entries in scripts/deploy.sh and scripts/dev.sh for
+  # whichever of these you actually deploy — this file alone doesn't wire
+  # them back into the deploy pipeline.
   # ════════════════════════════════════════════════════════════════════════
-#   # ════════════════════════════════════════════════════════════════════════
-#   # AFL
-#   # ════════════════════════════════════════════════════════════════════════
+  # ════════════════════════════════════════════════════════════════════════
+  # AFL
+  # ════════════════════════════════════════════════════════════════════════
 
-#   scorexl-afl-api:
-#     container_name: scorexl-afl-api
-#     profiles: ["afl"]
-#     image: ghcr.io/devmacuacua/scorexl-afl-api:latest
-#     restart: always
-#     ports:
-#       - "11000:11000"
-#     dns:
-#       - 8.8.8.8
-#       - 8.8.4.4
-#     env_file:
-#       - .env
-#     environment:
-#       SERVER_PORT: 11000
-#       JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
-#       SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-afl-postgres:5432/${AFL_POSTGRES_DB}
-#       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-#       SPRING_DATASOURCE_PASSWORD: ${AFL_POSTGRES_PASSWORD}
-#       SPRING_JPA_HIBERNATE_DDL_AUTO: update
-#       SPRING_JPA_SHOW_SQL: "false"
-#       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
-#       API_SPORTS_KEY: ${API_SPORTS_KEY}
-#       USER_API_URL: http://scorexl-user-api:9000
-#     depends_on:
-#       - scorexl-afl-postgres
-#       - scorexl-user-api
-#     networks:
-#       - scorexl-network
+  scorexl-afl-api:
+    container_name: scorexl-afl-api
+    profiles: ["afl"]
+    image: ghcr.io/devmacuacua/scorexl-afl-api:latest
+    restart: always
+    ports:
+      - "11000:11000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 11000
+      JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-afl-postgres:5432/${AFL_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${AFL_POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      API_SPORTS_KEY: ${API_SPORTS_KEY}
+      USER_API_URL: http://scorexl-user-api:9000
+    depends_on:
+      - scorexl-afl-postgres
+      - scorexl-user-api
+    networks:
+      - scorexl-network
 
-#   scorexl-afl-postgres:
-#     image: postgres:16
-#     container_name: scorexl-afl-postgres
-#     profiles: ["afl"]
-#     restart: always
-#     environment:
-#       POSTGRES_DB: ${AFL_POSTGRES_DB}
-#       POSTGRES_USER: ${POSTGRES_USER}
-#       POSTGRES_PASSWORD: ${AFL_POSTGRES_PASSWORD}
-#     volumes:
-#       - scorexl_afl_postgres_data:/var/lib/postgresql/data
-#     ports:
-#       - "5438:5432"
-#     networks:
-#       - scorexl-network
+  scorexl-afl-postgres:
+    image: postgres:16
+    container_name: scorexl-afl-postgres
+    profiles: ["afl"]
+    restart: always
+    environment:
+      POSTGRES_DB: ${AFL_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${AFL_POSTGRES_PASSWORD}
+    volumes:
+      - scorexl_afl_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5438:5432"
+    networks:
+      - scorexl-network
 
   # ════════════════════════════════════════════════════════════════════════
   # NFL (new, 2026-07-24 — picks-only pilot, no Ticket/Bingo)
@@ -397,259 +403,259 @@ services:
     networks:
       - scorexl-network
 
-#   # ════════════════════════════════════════════════════════════════════════
-#   # NHL (new, 2026-07-24 — picks-only pilot, no Ticket/Bingo)
-#   # ════════════════════════════════════════════════════════════════════════
+  # ════════════════════════════════════════════════════════════════════════
+  # NHL (new, 2026-07-24 — picks-only pilot, no Ticket/Bingo)
+  # ════════════════════════════════════════════════════════════════════════
 
-#   scorexl-nhl-api:
-#     container_name: scorexl-nhl-api
-#     profiles: ["nhl"]
-#     image: ghcr.io/devmacuacua/scorexl-nhl-api:latest
-#     restart: always
-#     ports:
-#       - "13000:13000"
-#     dns:
-#       - 8.8.8.8
-#       - 8.8.4.4
-#     env_file:
-#       - .env
-#     environment:
-#       SERVER_PORT: 13000
-#       JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
-#       SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-nhl-postgres:5432/${NHL_POSTGRES_DB}
-#       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-#       SPRING_DATASOURCE_PASSWORD: ${NHL_POSTGRES_PASSWORD}
-#       SPRING_JPA_HIBERNATE_DDL_AUTO: update
-#       SPRING_JPA_SHOW_SQL: "false"
-#       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
-#       API_SPORTS_KEY: ${API_SPORTS_KEY}
-#       USER_API_URL: http://scorexl-user-api:9000
-#     depends_on:
-#       - scorexl-nhl-postgres
-#       - scorexl-user-api
-#     networks:
-#       - scorexl-network
+  scorexl-nhl-api:
+    container_name: scorexl-nhl-api
+    profiles: ["nhl"]
+    image: ghcr.io/devmacuacua/scorexl-nhl-api:latest
+    restart: always
+    ports:
+      - "13000:13000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 13000
+      JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-nhl-postgres:5432/${NHL_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${NHL_POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      API_SPORTS_KEY: ${API_SPORTS_KEY}
+      USER_API_URL: http://scorexl-user-api:9000
+    depends_on:
+      - scorexl-nhl-postgres
+      - scorexl-user-api
+    networks:
+      - scorexl-network
 
-#   scorexl-nhl-postgres:
-#     image: postgres:16
-#     container_name: scorexl-nhl-postgres
-#     profiles: ["nhl"]
-#     restart: always
-#     environment:
-#       POSTGRES_DB: ${NHL_POSTGRES_DB}
-#       POSTGRES_USER: ${POSTGRES_USER}
-#       POSTGRES_PASSWORD: ${NHL_POSTGRES_PASSWORD}
-#     volumes:
-#       - scorexl_nhl_postgres_data:/var/lib/postgresql/data
-#     ports:
-#       - "5440:5432"
-#     networks:
-#       - scorexl-network
+  scorexl-nhl-postgres:
+    image: postgres:16
+    container_name: scorexl-nhl-postgres
+    profiles: ["nhl"]
+    restart: always
+    environment:
+      POSTGRES_DB: ${NHL_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${NHL_POSTGRES_PASSWORD}
+    volumes:
+      - scorexl_nhl_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5440:5432"
+    networks:
+      - scorexl-network
 
-#   # ════════════════════════════════════════════════════════════════════════
-#   # Rugby (new, 2026-07-24 — bets-generation pilot: games+odds+winner/spread/
-#   # totals only, no market-toggle/push/settlement yet)
-#   # ════════════════════════════════════════════════════════════════════════
+  # ════════════════════════════════════════════════════════════════════════
+  # Rugby (new, 2026-07-24 — bets-generation pilot: games+odds+winner/spread/
+  # totals only, no market-toggle/push/settlement yet)
+  # ════════════════════════════════════════════════════════════════════════
 
-#   scorexl-rugby-api:
-#     container_name: scorexl-rugby-api
-#     profiles: ["rugby"]
-#     image: ghcr.io/devmacuacua/scorexl-rugby-api:latest
-#     restart: always
-#     ports:
-#       - "14000:14000"
-#     dns:
-#       - 8.8.8.8
-#       - 8.8.4.4
-#     env_file:
-#       - .env
-#     environment:
-#       SERVER_PORT: 14000
-#       JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
-#       SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-rugby-postgres:5432/${RUGBY_POSTGRES_DB}
-#       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-#       SPRING_DATASOURCE_PASSWORD: ${RUGBY_POSTGRES_PASSWORD}
-#       SPRING_JPA_HIBERNATE_DDL_AUTO: update
-#       SPRING_JPA_SHOW_SQL: "false"
-#       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
-#       API_SPORTS_KEY: ${API_SPORTS_KEY}
-#       USER_API_URL: http://scorexl-user-api:9000
-#     depends_on:
-#       - scorexl-rugby-postgres
-#       - scorexl-user-api
-#     networks:
-#       - scorexl-network
+  scorexl-rugby-api:
+    container_name: scorexl-rugby-api
+    profiles: ["rugby"]
+    image: ghcr.io/devmacuacua/scorexl-rugby-api:latest
+    restart: always
+    ports:
+      - "14000:14000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 14000
+      JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-rugby-postgres:5432/${RUGBY_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${RUGBY_POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      API_SPORTS_KEY: ${API_SPORTS_KEY}
+      USER_API_URL: http://scorexl-user-api:9000
+    depends_on:
+      - scorexl-rugby-postgres
+      - scorexl-user-api
+    networks:
+      - scorexl-network
 
-#   scorexl-rugby-postgres:
-#     image: postgres:16
-#     container_name: scorexl-rugby-postgres
-#     profiles: ["rugby"]
-#     restart: always
-#     environment:
-#       POSTGRES_DB: ${RUGBY_POSTGRES_DB}
-#       POSTGRES_USER: ${POSTGRES_USER}
-#       POSTGRES_PASSWORD: ${RUGBY_POSTGRES_PASSWORD}
-#     volumes:
-#       - scorexl_rugby_postgres_data:/var/lib/postgresql/data
-#     ports:
-#       - "5441:5432"
-#     networks:
-#       - scorexl-network
+  scorexl-rugby-postgres:
+    image: postgres:16
+    container_name: scorexl-rugby-postgres
+    profiles: ["rugby"]
+    restart: always
+    environment:
+      POSTGRES_DB: ${RUGBY_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${RUGBY_POSTGRES_PASSWORD}
+    volumes:
+      - scorexl_rugby_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5441:5432"
+    networks:
+      - scorexl-network
 
-#   # ════════════════════════════════════════════════════════════════════════
-#   # Handball (new, 2026-07-24 — full stack scaffolded same day as Rugby's
-#   # frontend: games+odds+winner/spread/totals engines, settlement/push/
-#   # narrative/prediction-health, Ticket-of-Day/Bingo. 2026-08-25: removed the
-#   # league-id allowlist that used to gate this sport's sync — still early
-#   # enough that every league should sync, no restrictive whitelist.)
-#   # ════════════════════════════════════════════════════════════════════════
+  # ════════════════════════════════════════════════════════════════════════
+  # Handball (new, 2026-07-24 — full stack scaffolded same day as Rugby's
+  # frontend: games+odds+winner/spread/totals engines, settlement/push/
+  # narrative/prediction-health, Ticket-of-Day/Bingo. 2026-08-25: removed the
+  # league-id allowlist that used to gate this sport's sync — still early
+  # enough that every league should sync, no restrictive whitelist.)
+  # ════════════════════════════════════════════════════════════════════════
 
-#   scorexl-handball-api:
-#     container_name: scorexl-handball-api
-#     profiles: ["handball"]
-#     image: ghcr.io/devmacuacua/scorexl-handball-api:latest
-#     restart: always
-#     ports:
-#       - "15000:15000"
-#     dns:
-#       - 8.8.8.8
-#       - 8.8.4.4
-#     env_file:
-#       - .env
-#     environment:
-#       SERVER_PORT: 15000
-#       JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
-#       SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-handball-postgres:5432/${HANDBALL_POSTGRES_DB}
-#       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-#       SPRING_DATASOURCE_PASSWORD: ${HANDBALL_POSTGRES_PASSWORD}
-#       SPRING_JPA_HIBERNATE_DDL_AUTO: update
-#       SPRING_JPA_SHOW_SQL: "false"
-#       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
-#       API_SPORTS_KEY: ${API_SPORTS_KEY}
-#       USER_API_URL: http://scorexl-user-api:9000
-#     depends_on:
-#       - scorexl-handball-postgres
-#       - scorexl-user-api
-#     networks:
-#       - scorexl-network
+  scorexl-handball-api:
+    container_name: scorexl-handball-api
+    profiles: ["handball"]
+    image: ghcr.io/devmacuacua/scorexl-handball-api:latest
+    restart: always
+    ports:
+      - "15000:15000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 15000
+      JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-handball-postgres:5432/${HANDBALL_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${HANDBALL_POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      API_SPORTS_KEY: ${API_SPORTS_KEY}
+      USER_API_URL: http://scorexl-user-api:9000
+    depends_on:
+      - scorexl-handball-postgres
+      - scorexl-user-api
+    networks:
+      - scorexl-network
 
-#   scorexl-handball-postgres:
-#     image: postgres:16
-#     container_name: scorexl-handball-postgres
-#     profiles: ["handball"]
-#     restart: always
-#     environment:
-#       POSTGRES_DB: ${HANDBALL_POSTGRES_DB}
-#       POSTGRES_USER: ${POSTGRES_USER}
-#       POSTGRES_PASSWORD: ${HANDBALL_POSTGRES_PASSWORD}
-#     volumes:
-#       - scorexl_handball_postgres_data:/var/lib/postgresql/data
-#     ports:
-#       - "5442:5432"
-#     networks:
-#       - scorexl-network
+  scorexl-handball-postgres:
+    image: postgres:16
+    container_name: scorexl-handball-postgres
+    profiles: ["handball"]
+    restart: always
+    environment:
+      POSTGRES_DB: ${HANDBALL_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${HANDBALL_POSTGRES_PASSWORD}
+    volumes:
+      - scorexl_handball_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5442:5432"
+    networks:
+      - scorexl-network
 
-#   # ════════════════════════════════════════════════════════════════════════
-#   # Formula-1 (new, 2026-07-24 — predictions only, no odds: /odds does not
-#   # exist at all on this provider. RacePrediction is graded correct/
-#   # incorrect, no ValueBet/Ticket-of-Day/Bingo.)
-#   # ════════════════════════════════════════════════════════════════════════
+  # ════════════════════════════════════════════════════════════════════════
+  # Formula-1 (new, 2026-07-24 — predictions only, no odds: /odds does not
+  # exist at all on this provider. RacePrediction is graded correct/
+  # incorrect, no ValueBet/Ticket-of-Day/Bingo.)
+  # ════════════════════════════════════════════════════════════════════════
 
-#   scorexl-f1-api:
-#     container_name: scorexl-f1-api
-#     profiles: ["f1"]
-#     image: ghcr.io/devmacuacua/scorexl-f1-api:latest
-#     restart: always
-#     ports:
-#       - "16000:16000"
-#     dns:
-#       - 8.8.8.8
-#       - 8.8.4.4
-#     env_file:
-#       - .env
-#     environment:
-#       SERVER_PORT: 16000
-#       JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
-#       SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-f1-postgres:5432/${F1_POSTGRES_DB}
-#       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-#       SPRING_DATASOURCE_PASSWORD: ${F1_POSTGRES_PASSWORD}
-#       SPRING_JPA_HIBERNATE_DDL_AUTO: update
-#       SPRING_JPA_SHOW_SQL: "false"
-#       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
-#       API_SPORTS_KEY: ${API_SPORTS_KEY}
-#       USER_API_URL: http://scorexl-user-api:9000
-#     depends_on:
-#       - scorexl-f1-postgres
-#       - scorexl-user-api
-#     networks:
-#       - scorexl-network
+  scorexl-f1-api:
+    container_name: scorexl-f1-api
+    profiles: ["f1"]
+    image: ghcr.io/devmacuacua/scorexl-f1-api:latest
+    restart: always
+    ports:
+      - "16000:16000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 16000
+      JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-f1-postgres:5432/${F1_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${F1_POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      API_SPORTS_KEY: ${API_SPORTS_KEY}
+      USER_API_URL: http://scorexl-user-api:9000
+    depends_on:
+      - scorexl-f1-postgres
+      - scorexl-user-api
+    networks:
+      - scorexl-network
 
-#   scorexl-f1-postgres:
-#     image: postgres:16
-#     container_name: scorexl-f1-postgres
-#     profiles: ["f1"]
-#     restart: always
-#     environment:
-#       POSTGRES_DB: ${F1_POSTGRES_DB}
-#       POSTGRES_USER: ${POSTGRES_USER}
-#       POSTGRES_PASSWORD: ${F1_POSTGRES_PASSWORD}
-#     volumes:
-#       - scorexl_f1_postgres_data:/var/lib/postgresql/data
-#     ports:
-#       - "5443:5432"
-#     networks:
-#       - scorexl-network
+  scorexl-f1-postgres:
+    image: postgres:16
+    container_name: scorexl-f1-postgres
+    profiles: ["f1"]
+    restart: always
+    environment:
+      POSTGRES_DB: ${F1_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${F1_POSTGRES_PASSWORD}
+    volumes:
+      - scorexl_f1_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5443:5432"
+    networks:
+      - scorexl-network
 
-#   # ════════════════════════════════════════════════════════════════════════
-#   # MMA (new, 2026-07-24 — predictions only: /odds exists but returned zero
-#   # actual odds rows for every fight tried, a Free-plan coverage gap.
-#   # FightPrediction graded correct/incorrect, no ValueBet/Ticket-of-Day/Bingo.)
-#   # ════════════════════════════════════════════════════════════════════════
+  # ════════════════════════════════════════════════════════════════════════
+  # MMA (new, 2026-07-24 — predictions only: /odds exists but returned zero
+  # actual odds rows for every fight tried, a Free-plan coverage gap.
+  # FightPrediction graded correct/incorrect, no ValueBet/Ticket-of-Day/Bingo.)
+  # ════════════════════════════════════════════════════════════════════════
 
-#   scorexl-mma-api:
-#     container_name: scorexl-mma-api
-#     profiles: ["mma"]
-#     image: ghcr.io/devmacuacua/scorexl-mma-api:latest
-#     restart: always
-#     ports:
-#       - "17000:17000"
-#     dns:
-#       - 8.8.8.8
-#       - 8.8.4.4
-#     env_file:
-#       - .env
-#     environment:
-#       SERVER_PORT: 17000
-#       JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
-#       SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-mma-postgres:5432/${MMA_POSTGRES_DB}
-#       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-#       SPRING_DATASOURCE_PASSWORD: ${MMA_POSTGRES_PASSWORD}
-#       SPRING_JPA_HIBERNATE_DDL_AUTO: update
-#       SPRING_JPA_SHOW_SQL: "false"
-#       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
-#       API_SPORTS_KEY: ${API_SPORTS_KEY}
-#       USER_API_URL: http://scorexl-user-api:9000
-#     depends_on:
-#       - scorexl-mma-postgres
-#       - scorexl-user-api
-#     networks:
-#       - scorexl-network
+  scorexl-mma-api:
+    container_name: scorexl-mma-api
+    profiles: ["mma"]
+    image: ghcr.io/devmacuacua/scorexl-mma-api:latest
+    restart: always
+    ports:
+      - "17000:17000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 17000
+      JAVA_TOOL_OPTIONS: "-Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-mma-postgres:5432/${MMA_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MMA_POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      API_SPORTS_KEY: ${API_SPORTS_KEY}
+      USER_API_URL: http://scorexl-user-api:9000
+    depends_on:
+      - scorexl-mma-postgres
+      - scorexl-user-api
+    networks:
+      - scorexl-network
 
-#   scorexl-mma-postgres:
-#     image: postgres:16
-#     container_name: scorexl-mma-postgres
-#     profiles: ["mma"]
-#     restart: always
-#     environment:
-#       POSTGRES_DB: ${MMA_POSTGRES_DB}
-#       POSTGRES_USER: ${POSTGRES_USER}
-#       POSTGRES_PASSWORD: ${MMA_POSTGRES_PASSWORD}
-#     volumes:
-#       - scorexl_mma_postgres_data:/var/lib/postgresql/data
-#     ports:
-#       - "5444:5432"
-#     networks:
-#       - scorexl-network
+  scorexl-mma-postgres:
+    image: postgres:16
+    container_name: scorexl-mma-postgres
+    profiles: ["mma"]
+    restart: always
+    environment:
+      POSTGRES_DB: ${MMA_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${MMA_POSTGRES_PASSWORD}
+    volumes:
+      - scorexl_mma_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5444:5432"
+    networks:
+      - scorexl-network
 
   # ════════════════════════════════════════════════════════════════════════
   # WEB + USER API

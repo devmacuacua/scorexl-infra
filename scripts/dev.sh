@@ -20,10 +20,12 @@ cd "$(dirname "$0")/.."
 
 # afl/nhl/rugby/handball/f1/mma removed 2026-09-07 — never produced a
 # single value_bet, commented out in docker-compose.yml, no point deploying
-# them by default. Re-add here (and uncomment their compose blocks) if
-# revisited. nfl re-added 2026-09-09 — pipeline-trigger bug fixed, real
-# picks confirmed flowing.
-VALID_SPORTS=(football basketball nba volleyball mlb nfl)
+# them by default. nfl re-added 2026-09-09 — pipeline-trigger bug fixed,
+# real picks confirmed flowing. afl/nhl/rugby/handball/f1/mma re-added
+# 2026-09-11 at direct user instruction, without the same verification nfl
+# got — see docker-compose.yml's comment on that section for the caveats
+# (AFL/NHL near-zero odds coverage or off-season, f1/mma predictions-only).
+VALID_SPORTS=(football basketball nba volleyball mlb nfl afl nhl rugby handball f1 mma)
 CMD="${1:-up}"
 ARG="${2:-}"
 
