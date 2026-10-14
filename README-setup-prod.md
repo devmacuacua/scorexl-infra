@@ -28,8 +28,10 @@ GitHub → `scorexl-infra` → Settings → Deploy keys → Add (só leitura).
 ## 4. Clonar e provisionar
 
 ```bash
-git clone -b single-backend git@github.com:devmacuacua/scorexl-infra.git ~/projects/scorexl-infra
-cd ~/projects/scorexl-infra && sudo ./scripts/provision-droplet.sh && sudo usermod -aG docker fmacuacua
+mkdir -p ~/projects && cd ~/projects
+git clone git@github.com:devmacuacua/scorexl-infra.git
+cd scorexl-infra && git checkout single-backend
+sudo ./scripts/provision-droplet.sh && sudo usermod -aG docker fmacuacua
 ```
 
 Sai e volta a entrar (grupo `docker`).
