@@ -16,11 +16,13 @@ No painel da DigitalOcean: Ubuntu 24.04, **4 GB / 2 vCPU**, mesma região do ant
 Corre no teu PC, dentro deste repo:
 
 ```bash
-ssh -i ~/.ssh/id_rsa_do root@209.38.194.84 'bash -s' < scripts/provision-droplet.sh
-rsync -a --exclude .env --exclude backups --exclude .git -e "ssh -i ~/.ssh/id_rsa_do" ./ root@209.38.194.84:/opt/scorexl-infra/
+scp scripts/provision-droplet.sh scorexl:/tmp/
+ssh -t scorexl 'sudo bash /tmp/provision-droplet.sh'
+rsync -a --exclude .env --exclude backups --exclude .git ./ scorexl:/opt/scorexl-infra/
 ```
 
 Instala Docker, nginx, ufw (22 e 80), fail2ban, atualizações automáticas, swap de 2 GB e limita os logs do Docker.
+Pode correr de novo sem estragar nada. (A primeira vez foi como `root`, antes do passo 5.)
 
 ### 3. Redimensionar para 4 GB ⚠️ a meio
 
@@ -31,6 +33,7 @@ No painel: **Power off → Resize → 4 GB / 2 vCPU ("CPU and RAM + disk") → P
 ### 4. Utilizador `fmacuacua` e fuso horário ✅
 
 ```bash
+# feito como root, antes do passo 5 bloquear o root
 ssh -i ~/.ssh/id_rsa_do root@209.38.194.84
 
 timedatectl set-timezone Africa/Maputo
@@ -63,7 +66,7 @@ PasswordAuthentication no
 sudo systemctl restart ssh
 ```
 
-A partir daqui, entras sempre como `fmacuacua` (configura já o **Atalho SSH**, abaixo).
+A partir daqui, entras sempre como `fmacuacua` — o `root` já não entra. Configura já o **Atalho SSH** (abaixo); comandos de administração levam `sudo`.
 
 ### 6. Cloud Firewall
 

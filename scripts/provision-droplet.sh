@@ -2,9 +2,13 @@
 set -euo pipefail
 
 # One-time setup of a fresh DigitalOcean droplet (Ubuntu 24.04, 4 GB) for the
-# single-backend stack. Run as root, from your machine:
+# single-backend stack. Runs as root (via sudo), from your machine:
 #
-#   ssh root@<new-ip> 'bash -s' < scripts/provision-droplet.sh
+#   scp scripts/provision-droplet.sh scorexl:/tmp/
+#   ssh -t scorexl 'sudo bash /tmp/provision-droplet.sh'
+#
+# (first run on a fresh droplet, before root login is disabled:
+#   ssh root@<new-ip> 'bash -s' < scripts/provision-droplet.sh)
 #
 # Idempotent: safe to run again. Installs Docker (Docker's own apt repo), nginx,
 # ufw (22 + 80 only), fail2ban, unattended security upgrades, Docker log rotation
