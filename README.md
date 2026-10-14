@@ -1,297 +1,101 @@
 # scorexl-infra
 
-Single consolidated infra repo for ScoreXL: one `docker-compose.yml`, one
-shared Docker network, one nginx config directory, and deploy/bootstrap
-scripts — for every sport's API and the shared user-api and web frontend.
+Como o ScoreXL roda em produção: um `docker-compose.yml`, configs do nginx e scripts.
+Branch `single-backend` = stack novo (1 backend + 1 Postgres). `main` = stack antigo
+(13 APIs + 13 Postgres), ainda em produção até o cutover.
 
-This repo **replaces** six previously separate infra repos:
+## Stack
 
-- `scorexl-football-infra`
-- `scorexl-basketball-infra`
-- `scorexl-nba-infra`
-- `scorexl-mlb-infra`
-- `scorexl-afl-infra`
-- `scorexl-web-infra`
-
-...and adds a seventh sport, **Volleyball**, from day one.
-
-Those six repos are left untouched by this consolidation — they keep
-running in production until the manual cutover procedure below is carried
-out by a human. This repo does not delete or modify them. **As of
-2026-07-23 this repo is the single build source going forward — the six
-legacy repos are deprecated and no longer actively updated.**
-
-## Single backend cutover (branch `single-backend`, 2026-10-14)
-
-This branch replaces the 13 per-sport `*-api` containers + 13 Postgres
-containers with **one** `scorexl-backend` (repo `scorexl-backend`) and **one**
-`scorexl-postgres` (DB `scorexl`, one schema per module: `football`,
-`basketball`, `nba`, `volleyball`, `mlb`, `afl`, `nfl`, `nhl`, `rugby`,
-`handball`, `f1`, `mma`, `account` for users, `platform` for api plans). Public
-URLs do not change: nginx maps each subdomain to its module prefix
-(`basketball-api.scorexl.com/x` -> `127.0.0.1:8080/basketball/x`,
-`api.scorexl.com/x` -> `/football/x`). The web talks to the backend over the
-docker network.
-
-Every container port is published on **127.0.0.1 only** — Docker's own iptables
-rules bypass ufw, so a `0.0.0.0` binding would expose Postgres to the internet.
-Analysis access to the DB is through an SSH tunnel:
-`ssh -L 5440:127.0.0.1:5440 root@<droplet>` then `localhost:5440`.
-
-`scripts/bootstrap.sh` **copies** `nginx/*.conf` into `/etc/nginx/sites-available`
-(it doesn't symlink): nginx only changes when bootstrap is re-run.
-
-### New droplet (chosen path: the old droplet stays untouched as rollback)
-
-| | IP | Role |
+| Container | Imagem | Porta (só 127.0.0.1) |
 |---|---|---|
-| OLD | `188.166.116.252` | current production (13 APIs + 13 DBs), rollback target |
-| NEW | `209.38.194.84` | single-backend stack, created 2026-10-14 |
+| `scorexl-backend` | `ghcr.io/devmacuacua/scorexl-backend` | 8080 |
+| `scorexl-postgres` | `postgres:16` — DB `scorexl`, um schema por esporte + `account` + `platform` | 5440 |
+| `scorexl-web` | `ghcr.io/devmacuacua/scorexl-web` | 3000 |
+| `scorexl-umami` + `scorexl-umami-postgres` | analytics | 18000 / 5445 |
 
-Status (2026-10-14):
+nginx (porta 80, atrás do Cloudflare) mapeia os domínios:
+`scorexl.com` → web, `analytics.scorexl.com` → umami, `api.scorexl.com` → `/football`,
+`<esporte>-api.scorexl.com` → `/<esporte>` no backend.
 
-- [x] NEW created (Ubuntu 24.04.5), SSH key `id_rsa_do`
-- [x] 1. provisioned — Docker 29.9 + compose 5.6, nginx 1.24, ufw (22, 80), fail2ban,
-      unattended upgrades, 2 GB swap, Docker logs capped at 5 x 20 MB
-- [x] 2a. repo copied to `/opt/scorexl-infra` (branch `single-backend`, no `.env`)
-- [ ] **resize NEW to 4 GB / 2 vCPU** — it was created as 512 MB / 1 vCPU / 10 GB disk,
-      which can't run the stack (backend heap alone is 1 GB). Panel: Power off ->
-      Resize -> 4 GB / 2 vCPU ("CPU and RAM + disk"; the disk resize is permanent)
-      -> Power on. Everything installed so far survives the resize.
-- [ ] 2b. `.env` from OLD (+ `BACKEND_POSTGRES_PASSWORD`)
-- [ ] 3. GHCR login, `docker compose pull`, `bootstrap.sh`
-- [ ] 4-9. cutover (downtime window)
-- [ ] 10. api plans
+Portas só em 127.0.0.1 porque o Docker ignora o ufw. Acesso ao banco para análise:
 
-From your machine (checkout of this branch). OLD's port 22 is IP-allowlisted, so the
-OLD steps run from a machine that's allowed in:
-
-1. Provision (once, idempotent):
-   `ssh root@209.38.194.84 'bash -s' < scripts/provision-droplet.sh`
-2. Code + secrets:
-   `rsync -a --exclude .env --exclude backups --exclude .git ./ root@209.38.194.84:/opt/scorexl-infra/`
-   `scp -3 root@188.166.116.252:<old infra dir>/.env root@209.38.194.84:/opt/scorexl-infra/.env`
-   then on NEW add `BACKEND_POSTGRES_PASSWORD=<new password>` to `.env`.
-3. Prepare (no downtime yet), on NEW in `/opt/scorexl-infra`:
-   `grep ^GH_PACKAGES_TOKEN= .env | cut -d= -f2- | docker login ghcr.io -u devmacuacua --password-stdin`
-   `docker compose pull && ./scripts/bootstrap.sh`
-4. **Downtime starts** — dump on OLD (from a worktree, so the old checkout and
-   its running stack are not touched):
-   `cd <old infra dir> && git fetch && git worktree add /opt/scorexl-migrate origin/single-backend`
-   `cd /opt/scorexl-migrate && ./scripts/migrate-to-single-backend.sh dump`
-   It stops the old APIs (DBs stay up) and writes `backups/<ts>.tgz` (all 13 DBs
-   + umami, with exact per-table row counts).
-5. Move the dump:
-   `scp -3 root@188.166.116.252:/opt/scorexl-migrate/backups/<ts>.tgz root@209.38.194.84:/opt/scorexl-infra/backups/`
-6. Restore on NEW (refuses if anything was already restored; verifies every count):
-   `tar -C backups -xzf backups/<ts>.tgz && ./scripts/migrate-to-single-backend.sh restore backups/<ts>`
-7. Start on NEW: `./scripts/deploy.sh`
-8. Smoke test on NEW, before DNS:
-   `curl -s -H 'Host: basketball-api.scorexl.com' http://127.0.0.1/api/v1/plan`
-   `curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: scorexl.com' http://127.0.0.1/`
-   `docker logs --tail=100 scorexl-backend`
-9. Cloudflare: point the A records (`scorexl.com`, `www`, `api`, every `*-api`,
-   `analytics`) from `188.166.116.252` to `209.38.194.84`. Proxied records switch
-   immediately — **downtime ends**.
-10. Every sport starts on the FREE api plan. If the api-sports account is still Pro,
-    switch the sports you want: `PUT https://<sport>-api.scorexl.com/api/v1/plan`
-    (`Authorization: Bearer $INTERNAL_API_KEY`, body `{"plan":"PAID"}`).
-
-DB access for analysis on NEW (ports are loopback-only):
-`ssh -i ~/.ssh/id_rsa_do -L 5440:127.0.0.1:5440 root@209.38.194.84`, then `localhost:5440`.
-
-Rollback (any time before OLD is destroyed): Cloudflare A records back to
-`188.166.116.252`, and on OLD `docker start` the API containers the dump stopped (it
-prints the list). Destroy OLD only after a few calm days.
-
-### Same droplet (alternative)
-
-`git checkout single-backend`, add `BACKEND_POSTGRES_PASSWORD` to `.env`, then
-`./scripts/migrate-to-single-backend.sh` (mode `all`: dump + restore + verify here),
-`./scripts/deploy.sh`, `./scripts/bootstrap.sh`. Rollback:
-`git checkout main && rm .single-backend-migrated && ./scripts/deploy.sh && ./scripts/bootstrap.sh`.
-
-## Why one repo
-
-The legacy repos each ran their own isolated Docker network, their own
-`docker-compose.yml`, and their own nginx site file — despite all sitting on
-the *same* droplet (every nginx config does `proxy_pass
-http://127.0.0.1:<port>`, which only works same-host). That per-repo
-isolation bought nothing and cost real inconsistency:
-
-- Postgres user was `scorexl` in some repos, `postgres` in others.
-- Only some repos pinned an explicit `ipam.subnet`.
-- Football configured engine URLs via `.env`; basketball and nba hardcoded
-  them directly in `docker-compose.yml`.
-- **A real bug**: `scorexl-football-infra` and `scorexl-web-infra` both
-  bootstrapped nginx to the same file, `/etc/nginx/sites-available/default`
-  — whichever was (re-)bootstrapped last silently clobbered the other's
-  site config.
-
-This repo fixes all of the above and puts every sport's containers on one
-shared network (`scorexl-network`) so they can reach each other by service
-name instead of `host.docker.internal` hacks.
-
-**What is deliberately *not* consolidated: the databases.** Each sport (plus
-web/user-api) keeps its own isolated Postgres container and its own volume.
-Merging live production databases into one instance is a much riskier
-migration (pg_dump/restore, schema collisions) for limited benefit, and
-per-sport DB isolation is good practice on its own — a bad migration or
-runaway query in one sport's schema can't touch another sport's data.
-
-**Market engines are not separate containers.** As of 2026-07-23, every
-sport's market-calculation engines (handicap, over/under, spread, totals,
-etc.) were merged into that sport's own API as in-process code — eliminating
-the per-engine JVM overhead and the internal HTTP hop. `scorexl-football-
-live-opportunities-engine` was kept separate for the same stateful reasons,
-but the feature it backed was discontinued 2026-08-08 and its container
-dropped from docker-compose — the standalone repo itself is untouched.
-
-## Structure
-
-```
-scorexl-infra/
-  docker-compose.yml   # shared network + all postgres + all api services
-  .env.example          # reconciled superset of all legacy .env.example files
-  docker/postgres/      # init.sql per sport
-  nginx/
-    api.scorexl.com.conf              # football api
-    basketball-api.scorexl.com.conf
-    nba-api.scorexl.com.conf
-    volleyball-api.scorexl.com.conf
-    mlb-api.scorexl.com.conf
-    afl-api.scorexl.com.conf
-    scorexl.com.conf                  # web — distinct filename, fixes the "default" collision bug
-    analytics.scorexl.com.conf        # self-hosted Umami dashboard
-  scripts/
-    bootstrap.sh    # installs docker/nginx, symlinks nginx/*.conf into sites-available + sites-enabled
-    deploy.sh        # docker compose pull && up -d, whole stack or one sport via --profile/arg
-    dev.sh           # local dev: build from sibling source checkouts instead of pulling GHCR images
+```bash
+ssh -i ~/.ssh/id_rsa_do -L 5440:127.0.0.1:5440 root@209.38.194.84   # depois: localhost:5440
 ```
 
-## Services / ports
+## Dia a dia (no servidor, em /opt/scorexl-infra)
 
-| Sport      | Service                                    | Host port(s) |
-|------------|---------------------------------------------|--------------|
-| Football   | `scorexl-football-api`                      | 4000         |
-| Football   | `scorexl-football-postgres`                 | 5432         |
-| Basketball | `scorexl-basketball-api`                    | 5000         |
-| Basketball | `scorexl-basketball-postgres`               | 5433         |
-| NBA        | `scorexl-nba-api`                           | 7000         |
-| NBA        | `scorexl-nba-postgres`                      | 5435         |
-| Volleyball | `scorexl-volleyball-api`                    | 8000         |
-| Volleyball | `scorexl-volleyball-postgres`               | 5434         |
-| MLB        | `scorexl-mlb-api`                           | 10000        |
-| MLB        | `scorexl-mlb-postgres`                      | 5437         |
-| AFL        | `scorexl-afl-api`                           | 11000        |
-| AFL        | `scorexl-afl-postgres`                      | 5438         |
-| NFL        | `scorexl-nfl-api`                           | 12000        |
-| NFL        | `scorexl-nfl-postgres`                      | 5439         |
-| NHL        | `scorexl-nhl-api`                           | 13000        |
-| NHL        | `scorexl-nhl-postgres`                      | 5440         |
-| Rugby      | `scorexl-rugby-api`                         | 14000        |
-| Rugby      | `scorexl-rugby-postgres`                    | 5441         |
-| Handball   | `scorexl-handball-api`                      | 15000        |
-| Handball   | `scorexl-handball-postgres`                 | 5442         |
-| Web        | `scorexl-web`                               | 3000         |
-| Web        | `scorexl-user-api`                          | 9000         |
-| Web        | `scorexl-user-postgres`                     | 5436         |
+```bash
+./scripts/deploy.sh               # pull das imagens :latest + up -d
+sudo ./scripts/bootstrap.sh       # reaplica nginx/*.conf (o script COPIA os arquivos)
+docker compose ps
+docker logs -f --tail=200 scorexl-backend
+```
 
-All per-sport port numbers are kept identical to the legacy repos on
-purpose — nothing calling these ports today (nginx configs, any hardcoded
-client URLs) needs to change.
+`.env` (não versionado; modelo em `.env.example`): `POSTGRES_USER`, `BACKEND_POSTGRES_PASSWORD`,
+`API_SPORTS_KEY`, `INTERNAL_API_KEY`, `GH_PACKAGES_TOKEN`, `VAPID_*`, `UMAMI_*` e as do web.
 
-`docker-compose.yml` uses [Compose
-profiles](https://docs.docker.com/compose/how-tos/profiles/) — `football`,
-`basketball`, `nba`, `volleyball`, `mlb`, `afl` — so `scripts/deploy.sh` can
-pull/up one sport at a time. `scorexl-web` / `scorexl-user-api` /
-`scorexl-user-postgres` have no profile and are always included, since
-user-api is a shared dependency of every sport's API (`USER_API_URL`).
+Local: `./scripts/dev.sh up` builda a partir dos repos irmãos (`../scorexl-backend`, ...).
 
-## Migration / cutover procedure (manual — do not automate this)
+## Servidores
 
-Every production-affecting step below is meant to be run **by hand, by a
-human**, the same way deploys and DDL already work in this project. Nothing
-here is wired into CI/CD, and it shouldn't be.
+| | IP | |
+|---|---|---|
+| novo | `209.38.194.84` | stack novo, criado 2026-10-14 |
+| antigo | `188.166.116.252` | produção atual / rollback. SSH só de IPs liberados |
 
-Because this repo intentionally reuses the legacy repos' exact container
-names and host ports (see above), a given sport's *new* container cannot run
-side-by-side with that same sport's *old* container on this host at the same
-time — they'd collide on both the container name and the port binding. So
-"stand it up alongside the old stack" means **sport by sport**, not a single
-big-bang swap of all six blocks at once:
+## Cutover para o droplet novo
 
-1. **Prep**: copy `.env.example` to `.env` on the droplet and fill in real
-   values. `INTERNAL_API_KEY`, `GH_PACKAGES_TOKEN`, and the api-sports.io
-   keys can reuse whatever's already confirmed working. Every sport's
-   Postgres password — `FOOTBALL_POSTGRES_PASSWORD`,
-   `BASKETBALL_POSTGRES_PASSWORD`, `NBA_POSTGRES_PASSWORD`,
-   `MLB_POSTGRES_PASSWORD`, `AFL_POSTGRES_PASSWORD`,
-   `USER_POSTGRES_PASSWORD` — **must be copied from the legacy repos'
-   real (not `.example`) `.env` files on the droplet before those repos are
-   deleted**, not invented, or the new containers won't be able to
-   authenticate against the existing data. Don't assume a sport has "no
-   legacy data to match" just because it's a recent pilot (Volleyball,
-   MLB, AFL) — check `docker volume ls | grep postgres` first; if a
-   `scorexl-<sport>-infra_...` volume already exists, that sport has real
-   data and needs its real password, the same as football/basketball/nba.
-   Discovered the hard way 2026-07-23: guessed fresh passwords for
-   MLB/AFL/Volleyball assuming no prior deploy, which caused an hours-long
-   Hibernate dialect-resolution crash loop (`Unable to determine Dialect
-   without JDBC metadata` — the real symptom of a failed DB login, not an
-   actual dialect problem) that pegged CPU on every restart. MLB/AFL turned
-   out to already use the account-wide `scorexl`/`scorexl` credential;
-   Volleyball's real password was lost when its legacy repo/`.env` were
-   deleted before being copied out, so its volume was abandoned and
-   recreated fresh (`external:`/`name:` removed from its entry in
-   `docker-compose.yml`'s `volumes:` block) — acceptable since it was a
-   brand-new pilot with negligible data, but **copy every password out
-   before deleting a legacy repo**, not after.
-   **Also verify the actual DB name and username against a working DBeaver
-   connection (or equivalent) before assuming they match this repo's
-   defaults** — confirmed 2026-07-23 that football's real DB is named
-   `scorexl` (not `scorexl_football`, a holdover from when football was the
-   only sport) and `scorexl-user-api`'s real user is `postgres` (not
-   `scorexl` like every other sport) — both now hardcoded to match reality
-   in `docker-compose.yml`, but don't assume the legacy `.env.example` files
-   in those repos are accurate; they weren't. **The Postgres volumes must
-   also be pointed at the legacy repos' real volumes** — see the
-   `external: true` / `name:` overrides in this repo's `docker-compose.yml`'s
-   `volumes:` block (all except Volleyball's, now fresh); Compose prefixes
-   unnamed volumes with the project directory name, so a fresh
-   `scorexl-infra` checkout creates brand-new empty volumes instead of
-   reusing `scorexl-<sport>-infra`'s unless told not to.
-2. **Pick one sport to cut over first** (e.g. football). Confirm nothing
-   else currently depends on `scorexl-football-infra`'s specific container
-   staying up mid-swap (it doesn't — every sport's API is independent).
-3. Stop *only that sport's* containers in the legacy repo:
-   `docker compose stop` (or `down`) inside `scorexl-football-infra`. This
-   frees the container name and host ports.
-4. From this repo, bring up just that sport:
-   `./scripts/deploy.sh football` (equivalent to
-   `docker compose --profile football up -d`, plus `scorexl-web` /
-   `scorexl-user-api`, which are always-on).
-5. **Verify** the sport's API responds correctly through the *new* stack —
-   at minimum a real endpoint through `curl http://127.0.0.1:<port>/...`,
-   and check `docker logs scorexl-<sport>-api` for startup errors, before
-   touching anything else.
-6. Repeat steps 2–5 for basketball, nba, volleyball, mlb, afl, and
-   web/user-api, one at a time. Volleyball/MLB/AFL have no legacy stack to
-   cut over from — their containers just start fresh from this repo.
-7. **Only after every sport's API has been verified working through this
-   repo's stack**, run `./scripts/bootstrap.sh` to point nginx at this
-   repo's `nginx/*.conf` files instead of the legacy repos'. Confirm
-   `scorexl.com` and every `*-api.scorexl.com` subdomain resolve correctly
-   afterward.
-8. **Decommission** the legacy repos only after nginx + all containers are
-   confirmed serving from this repo: remove their `docker compose` stacks
-   (`docker compose down`, optionally `-v` if you're also ready to delete
-   their now-unused Postgres volumes — those hold the same data this repo's
-   equivalent Postgres containers took over, so only do this once you're
-   confident nothing needs to roll back), and archive/delete the legacy
-   GitHub repos.
+- [x] droplet criado (Ubuntu 24.04), chave `id_rsa_do`
+- [x] provisionado: `ssh root@209.38.194.84 'bash -s' < scripts/provision-droplet.sh`
+      (Docker, nginx, ufw 22/80, fail2ban, updates automáticos, swap 2 GB, logs limitados)
+- [x] repo em `/opt/scorexl-infra`:
+      `rsync -a --exclude .env --exclude backups --exclude .git ./ root@209.38.194.84:/opt/scorexl-infra/`
+- [ ] **redimensionar para 4 GB / 2 vCPU** (foi criado com 512 MB): painel → Power off → Resize →
+      "CPU and RAM + disk" → Power on
+- [ ] `.env` do antigo → novo, e acrescentar `BACKEND_POSTGRES_PASSWORD`:
+      `scp -3 root@188.166.116.252:<pasta do infra>/.env root@209.38.194.84:/opt/scorexl-infra/.env`
+- [ ] no novo, preparar (sem downtime):
+      ```bash
+      grep ^GH_PACKAGES_TOKEN= .env | cut -d= -f2- | docker login ghcr.io -u devmacuacua --password-stdin
+      docker compose pull && ./scripts/bootstrap.sh
+      ```
+- [ ] **início do downtime** — dump no antigo (num worktree, sem mexer no que está rodando):
+      ```bash
+      cd <pasta do infra> && git fetch && git worktree add /opt/scorexl-migrate origin/single-backend
+      cd /opt/scorexl-migrate && ./scripts/migrate-to-single-backend.sh dump
+      ```
+      Para as APIs antigas e gera `backups/<ts>.tgz` (13 bancos + umami + contagem de linhas).
+- [ ] copiar o dump:
+      `scp -3 root@188.166.116.252:/opt/scorexl-migrate/backups/<ts>.tgz root@209.38.194.84:/opt/scorexl-infra/backups/`
+- [ ] no novo, restaurar (confere cada tabela) e subir:
+      ```bash
+      tar -C backups -xzf backups/<ts>.tgz && ./scripts/migrate-to-single-backend.sh restore backups/<ts>
+      ./scripts/deploy.sh
+      ```
+- [ ] testar antes do DNS:
+      ```bash
+      curl -s -H 'Host: basketball-api.scorexl.com' http://127.0.0.1/api/v1/plan
+      curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: scorexl.com' http://127.0.0.1/
+      ```
+- [ ] Cloudflare: registros A (`scorexl.com`, `www`, `api`, `*-api`, `analytics`) →
+      `209.38.194.84` — **fim do downtime**
+- [ ] planos: todo esporte começa em FREE; se a conta da API-Sports for Pro, passar para PAID
+      (ver README do `scorexl-backend`)
 
-If anything looks wrong at any verification step, the rollback is simple:
-stop this repo's container for that sport, restart the legacy repo's
-container (it's still there, just stopped, with its data volume intact),
-and investigate before trying again. Nothing is destructive until step 8.
+**Rollback:** DNS de volta para `188.166.116.252` e, no antigo, `docker start` nas APIs que o
+dump parou (ele imprime a lista). Destruir o droplet antigo só depois de alguns dias estáveis.
+
+Mesmo servidor em vez de droplet novo: `git checkout single-backend`, `.env` com
+`BACKEND_POSTGRES_PASSWORD`, `./scripts/migrate-to-single-backend.sh` (modo `all`),
+`./scripts/deploy.sh`, `sudo ./scripts/bootstrap.sh`.
+
+## Scripts
+
+| Script | O quê |
+|---|---|
+| `provision-droplet.sh` | setup único de um Ubuntu 24.04 novo (idempotente) |
+| `bootstrap.sh` | instala nginx (e Docker se faltar), copia `nginx/*.conf`, recarrega |
+| `deploy.sh` | `compose pull` + `up -d`; recusa rodar sem `.single-backend-migrated` |
+| `migrate-to-single-backend.sh` | `all` / `dump` / `restore <dir>` — migração dos 13 bancos |
+| `dev.sh` | ambiente local buildando dos repos irmãos |
