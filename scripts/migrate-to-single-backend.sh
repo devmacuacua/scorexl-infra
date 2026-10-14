@@ -239,7 +239,7 @@ Dump done: backups/$TS.tgz ($(du -h "backups/$TS.tgz" | cut -f1)). Old API conta
 (web keeps serving, with errors) — downtime runs until the new droplet takes traffic.
 
 Next, from your machine:
-  scp root@<old-ip>:$(pwd)/backups/$TS.tgz root@<new-ip>:/opt/scorexl-infra/backups/
+  scp root@<old-ip>:$(pwd)/backups/$TS.tgz fmacuacua@<new-ip>:~/scorexl/backups/
 On the new droplet:
   tar -C backups -xzf backups/$TS.tgz && ./scripts/migrate-to-single-backend.sh restore backups/$TS
 

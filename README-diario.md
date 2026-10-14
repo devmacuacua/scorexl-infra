@@ -40,7 +40,7 @@ docker volume rm scorexl_backend_postgres_data
 
 # Produção
 
-No servidor novo, em `/opt/scorexl-infra` (entra com `ssh scorexl` — atalho no README-setup-prod).
+No servidor novo, em `/home/fmacuacua/scorexl` (entra com `ssh scorexl` — atalho no README-setup-prod).
 
 ## 1. Publicar uma versão nova
 
@@ -48,7 +48,7 @@ Depois do push no `scorexl-backend` ou `scorexl-web` (o GitHub Actions gera a im
 
 ```bash
 ssh scorexl
-cd /opt/scorexl-infra
+cd ~/scorexl
 ./scripts/deploy.sh
 ```
 
@@ -66,16 +66,16 @@ docker logs -f --tail=200 scorexl-web
 Edita `nginx/*.conf` neste repo, envia para o servidor e reaplica (o script copia os ficheiros):
 
 ```bash
-rsync -a nginx/ scorexl:/opt/scorexl-infra/nginx/
-ssh scorexl 'cd /opt/scorexl-infra && sudo ./scripts/bootstrap.sh'
+rsync -a nginx/ scorexl:~/scorexl/nginx/
+ssh scorexl 'cd ~/scorexl && sudo ./scripts/bootstrap.sh'
 ```
 
 ## 4. Mudar o `.env`
 
 ```bash
 ssh scorexl
-nano /opt/scorexl-infra/.env
-cd /opt/scorexl-infra && docker compose up -d      # recria só os containers afetados
+nano ~/scorexl/.env
+cd ~/scorexl && docker compose up -d      # recria só os containers afetados
 ```
 
 ## 5. Base de dados para análise

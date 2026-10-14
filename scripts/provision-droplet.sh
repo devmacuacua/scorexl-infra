@@ -12,7 +12,7 @@ set -euo pipefail
 #
 # Idempotent: safe to run again. Installs Docker (Docker's own apt repo), nginx,
 # ufw (22 + 80 only), fail2ban, unattended security upgrades, Docker log rotation
-# and a 2 GB swapfile, and creates /opt/scorexl-infra for the repo checkout.
+# and a 2 GB swapfile, and creates ~/scorexl (home of the sudo user) for the infra repo.
 #
 # Every container port is published on 127.0.0.1 only (docker-compose.yml) — Docker
 # writes its own iptables rules and would bypass ufw for anything bound to 0.0.0.0.
@@ -74,8 +74,11 @@ systemctl enable --now fail2ban
 rm -f /etc/nginx/sites-enabled/default
 systemctl enable --now nginx
 
-mkdir -p /opt/scorexl-infra/backups
+# the infra repo lives in the admin user's home, not in /opt
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != root ]; then
+  install -d -o "$SUDO_USER" -g "$SUDO_USER" "/home/$SUDO_USER/scorexl" "/home/$SUDO_USER/scorexl/backups"
+fi
 
 echo
 echo "Provisioned. Docker $(docker --version | awk '{print $3}' | tr -d ,), $(docker compose version --short) compose, $(nginx -v 2>&1 | cut -d/ -f2) nginx."
-echo "Next: copy the infra repo + .env to /opt/scorexl-infra (README: \"New droplet\")."
+echo "Next: copy the infra repo + .env to ~/scorexl (README-setup-prod.md)."

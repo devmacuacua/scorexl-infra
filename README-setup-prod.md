@@ -18,10 +18,11 @@ Corre no teu PC, dentro deste repo:
 ```bash
 scp scripts/provision-droplet.sh scorexl:/tmp/
 ssh -t scorexl 'sudo bash /tmp/provision-droplet.sh'
-rsync -a --exclude .env --exclude backups --exclude .git ./ scorexl:/opt/scorexl-infra/
+rsync -a --exclude .env --exclude backups --exclude .git ./ scorexl:~/scorexl/
 ```
 
 Instala Docker, nginx, ufw (22 e 80), fail2ban, atualizações automáticas, swap de 2 GB e limita os logs do Docker.
+O projeto vive em **`/home/fmacuacua/scorexl`** (o conteúdo do `scorexl-infra` diretamente aí — não em `/opt`).
 Pode correr de novo sem estragar nada. (A primeira vez foi como `root`, antes do passo 5.)
 
 ### 3. Redimensionar para 4 GB ⚠️ a meio
@@ -40,7 +41,6 @@ timedatectl set-timezone Africa/Maputo
 adduser fmacuacua
 usermod -aG sudo,docker fmacuacua
 rsync --archive --chown=fmacuacua:fmacuacua ~/.ssh /home/fmacuacua
-chown -R fmacuacua:fmacuacua /opt/scorexl-infra
 ```
 
 Não fechas esta sessão ainda. Noutro terminal, confirma que entras com o novo utilizador:
@@ -79,21 +79,21 @@ No painel da DigitalOcean: **Networking → Firewalls → Create**, só com as p
 O `.env` de produção está no droplet antigo. Corre no teu PC (de uma máquina que tenha acesso SSH ao antigo):
 
 ```bash
-scp -3 root@188.166.116.252:<pasta do infra>/.env scorexl:/opt/scorexl-infra/.env
+scp -3 root@188.166.116.252:<pasta do infra>/.env scorexl:~/scorexl/.env
 ```
 
 No novo, acrescenta uma senha nova para o Postgres único:
 
 ```bash
 ssh scorexl
-echo 'BACKEND_POSTGRES_PASSWORD=<senha nova>' >> /opt/scorexl-infra/.env
+echo 'BACKEND_POSTGRES_PASSWORD=<senha nova>' >> ~/scorexl/.env
 ```
 
 ### 8. GHCR, imagens e nginx
 
 ```bash
 ssh scorexl
-cd /opt/scorexl-infra
+cd ~/scorexl
 grep ^GH_PACKAGES_TOKEN= .env | cut -d= -f2- | docker login ghcr.io -u devmacuacua --password-stdin
 docker compose pull
 sudo ./scripts/bootstrap.sh
@@ -118,14 +118,14 @@ Para as 13 APIs antigas (as bases continuam ligadas) e cria `backups/<ts>.tgz` c
 No teu PC:
 
 ```bash
-scp -3 root@188.166.116.252:/opt/scorexl-migrate/backups/<ts>.tgz scorexl:/opt/scorexl-infra/backups/
+scp -3 root@188.166.116.252:/opt/scorexl-migrate/backups/<ts>.tgz scorexl:~/scorexl/backups/
 ```
 
 ### 11. Restaurar e arrancar
 
 ```bash
 ssh scorexl
-cd /opt/scorexl-infra
+cd ~/scorexl
 tar -C backups -xzf backups/<ts>.tgz
 ./scripts/migrate-to-single-backend.sh restore backups/<ts>
 ./scripts/deploy.sh
@@ -189,13 +189,13 @@ Host scorexl
     IdentityFile ~/.ssh/id_rsa_do
 ```
 
-Depois basta `ssh scorexl`, e para enviar ficheiros `scp ficheiro scorexl:/opt/scorexl-infra/`.
+Depois basta `ssh scorexl`, e para enviar ficheiros `scp ficheiro scorexl:~/scorexl/`.
 
 ---
 
 ## Variáveis de ambiente (`.env`)
 
-Tudo num só `.env` em `/opt/scorexl-infra` (não versionado; modelo em `.env.example`). O
+Tudo num só `.env` em `/home/fmacuacua/scorexl` (não versionado; modelo em `.env.example`). O
 `docker-compose.yml` passa-o ao backend e ao web.
 
 **Base de dados e backend**
