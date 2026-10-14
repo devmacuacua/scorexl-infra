@@ -1,110 +1,77 @@
 # Dia a dia
 
-Primeira vez: [README-setup-local.md](README-setup-local.md) · [README-setup-prod.md](README-setup-prod.md).
+## Local
 
-# Local
-
-Na tua máquina, em `~/workspace-scorexl`.
-
-## 1. Ligar e desligar
+### Ligar / desligar
 
 ```bash
-cd scorexl-infra
-./scripts/dev.sh up             # backend (build do ../scorexl-backend) + Postgres + umami
-./scripts/dev.sh logs
+cd ~/workspace-scorexl/scorexl-infra
+./scripts/dev.sh up
 ./scripts/dev.sh down
 ```
 
-Ou, a mexer no backend: `docker compose up -d scorexl-postgres` e `./mvnw spring-boot:run` no `scorexl-backend`.
-
-## 2. Web e mobile
+### Ver logs
 
 ```bash
-cd scorexl-web && pnpm dev                 # http://localhost:3000
-cd scorexl-mobile && npm run start
+./scripts/dev.sh logs
 ```
 
-## 3. Base local
+### Entrar na base
 
 ```bash
 docker exec -it scorexl-postgres psql -U scorexl -d scorexl
 ```
 
-## 4. Recomeçar com a base vazia
+### Apagar a base e recomeçar
 
 ```bash
-cd scorexl-infra
 ./scripts/dev.sh down
 docker volume rm scorexl_backend_postgres_data
 ```
 
-# Produção
+## Produção
 
-No servidor novo, em `/home/fmacuacua/scorexl` (entra com `ssh scorexl` — atalho no README-setup-prod).
+### Publicar versão nova
 
-## 1. Publicar uma versão nova
+```bash
+ssh scorexl 'cd ~/scorexl && ./scripts/deploy.sh'
+```
 
-Depois do push no `scorexl-backend` ou `scorexl-web` (o GitHub Actions gera a imagem `:latest`):
+### Ver estado e logs
 
 ```bash
 ssh scorexl
-cd ~/scorexl
-./scripts/deploy.sh
-```
-
-## 2. Ver o estado e os logs
-
-```bash
-docker compose ps
-docker stats --no-stream
+docker compose -f ~/scorexl/docker-compose.yml ps
 docker logs -f --tail=200 scorexl-backend
 docker logs -f --tail=200 scorexl-web
 ```
 
-## 3. Mudar o nginx
-
-Edita `nginx/*.conf` neste repo, envia para o servidor e reaplica (o script copia os ficheiros):
+### Mudar o nginx
 
 ```bash
 rsync -a nginx/ scorexl:~/scorexl/nginx/
-ssh scorexl 'cd ~/scorexl && sudo ./scripts/bootstrap.sh'
+ssh -t scorexl 'cd ~/scorexl && sudo ./scripts/bootstrap.sh'
 ```
 
-## 4. Mudar o `.env`
+### Mudar o `.env`
 
 ```bash
 ssh scorexl
 nano ~/scorexl/.env
-cd ~/scorexl && docker compose up -d      # recria só os containers afetados
+cd ~/scorexl && docker compose up -d
 ```
 
-## 5. Base de dados para análise
-
-A porta só existe em 127.0.0.1 no servidor, por isso abre um túnel:
+### Abrir a base no teu PC
 
 ```bash
-ssh -L 5440:127.0.0.1:5440 scorexl
+ssh -N -L 5440:127.0.0.1:5440 scorexl
 ```
 
-Depois liga a `localhost:5440`, base `scorexl`, utilizador `POSTGRES_USER`, senha `BACKEND_POSTGRES_PASSWORD`.
-Cada desporto é um schema (`football`, `basketball`, …, `account`, `platform`).
+Liga a `localhost:5440`, base `scorexl`.
 
-## 6. Plano da API-Sports de um desporto
+### Mudar o plano de um desporto
 
 ```bash
-curl https://mlb-api.scorexl.com/api/v1/plan                 # ver plano + cota de hoje
-
-curl -X PUT https://mlb-api.scorexl.com/api/v1/plan \
-  -H "Authorization: Bearer $INTERNAL_API_KEY" -H "Content-Type: application/json" \
-  -d '{"plan":"PAID"}'                                          # FREE ou PAID, vale em até 30s
+curl https://mlb-api.scorexl.com/api/v1/plan
+curl -X PUT https://mlb-api.scorexl.com/api/v1/plan -H "Authorization: Bearer $INTERNAL_API_KEY" -H "Content-Type: application/json" -d '{"plan":"PAID"}'
 ```
-
-## Scripts
-
-| Script | Faz |
-|---|---|
-| `provision-droplet.sh` | setup inicial de um Ubuntu 24.04 (pode correr de novo) |
-| `bootstrap.sh` | instala nginx, copia `nginx/*.conf`, recarrega |
-| `deploy.sh` | `compose pull` + `up -d`; recusa correr sem migração feita |
-| `migrate-to-single-backend.sh` | `dump` (antigo) / `restore <dir>` (novo) / `all` (mesmo servidor) |
-| `dev.sh` | ambiente local, faz build a partir dos repos ao lado |

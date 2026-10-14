@@ -1,19 +1,14 @@
 # Setup de produção
 
-Preparar o VPS, uma vez: servidor, `.env` e migração do droplet antigo.
-Local: [README-setup-local.md](README-setup-local.md).
+Servidor novo `209.38.194.84` · antigo `188.166.116.252` · projeto em `/home/fmacuacua/scorexl`.
 
-## Novo droplet — passo a passo
+Estado (2026-10-14): 1 ✅ 2 ✅ 3 ⚠️ 4 ✅ 5 ✅ — próximo: **3**, **6**, **7**.
 
-Estado (2026-10-14): passos 1, 2, 4 e 5 feitos; 3 a meio (está com 2 GB / 1 vCPU). Próximo: **3**, depois **6** e **7**.
+## 1. Criar o droplet ✅
 
-### 1. Criar o droplet ✅
+Painel DigitalOcean: Ubuntu 24.04 · 4 GB / 2 vCPU · chave `id_rsa_do` · backups ligados.
 
-No painel da DigitalOcean: Ubuntu 24.04, **4 GB / 2 vCPU**, mesma região do antigo, chave SSH `id_rsa_do`, backups ligados.
-
-### 2. Provisionar ✅
-
-Corre no teu PC, dentro deste repo:
+## 2. Provisionar ✅
 
 ```bash
 scp scripts/provision-droplet.sh scorexl:/tmp/
@@ -21,107 +16,63 @@ ssh -t scorexl 'sudo bash /tmp/provision-droplet.sh'
 rsync -a --exclude .env --exclude backups --exclude .git ./ scorexl:~/scorexl/
 ```
 
-Instala Docker, nginx, ufw (22 e 80), fail2ban, atualizações automáticas, swap de 2 GB e limita os logs do Docker.
-O projeto vive em **`/home/fmacuacua/scorexl`** (o conteúdo do `scorexl-infra` diretamente aí — não em `/opt`).
-Pode correr de novo sem estragar nada. (A primeira vez foi como `root`, antes do passo 5.)
+## 3. Redimensionar ⚠️ (está com 2 GB)
 
-### 3. Redimensionar para 4 GB ⚠️ a meio
+Painel: Power off → Resize → 4 GB / 2 vCPU, "CPU and RAM + disk" → Power on.
 
-Criado com 512 MB, já passou para **2 GB / 1 vCPU / 48 GB** — ainda curto: o backend sozinho usa até ~1,4 GB.
-
-No painel: **Power off → Resize → 4 GB / 2 vCPU ("CPU and RAM + disk") → Power on**. Nada do que foi instalado se perde.
-
-### 4. Utilizador `fmacuacua` e fuso horário ✅
+## 4. Utilizador ✅
 
 ```bash
-# feito como root, antes do passo 5 bloquear o root
 ssh -i ~/.ssh/id_rsa_do root@209.38.194.84
-
 timedatectl set-timezone Africa/Maputo
 adduser fmacuacua
 usermod -aG sudo,docker fmacuacua
 rsync --archive --chown=fmacuacua:fmacuacua ~/.ssh /home/fmacuacua
 ```
 
-Não fechas esta sessão ainda. Noutro terminal, confirma que entras com o novo utilizador:
+## 5. SSH ✅
 
 ```bash
-ssh -i ~/.ssh/id_rsa_do fmacuacua@209.38.194.84
-```
-
-### 5. Endurecer o SSH ✅
-
-```bash
-sudo nano /etc/ssh/sshd_config
-```
-
-Altera estas duas linhas:
-
-```
-PermitRootLogin no
-PasswordAuthentication no
-```
-
-```bash
+sudo nano /etc/ssh/sshd_config      # PermitRootLogin no · PasswordAuthentication no
 sudo systemctl restart ssh
 ```
 
-A partir daqui, entras sempre como `fmacuacua` — o `root` já não entra. Configura já o **Atalho SSH** (abaixo); comandos de administração levam `sudo`.
+## 6. Cloud Firewall
 
-### 6. Cloud Firewall
+Painel: Networking → Firewalls → Create · portas 22 e 80 · associar a `209.38.194.84`.
 
-No painel da DigitalOcean: **Networking → Firewalls → Create**, só com as portas **22** e **80** abertas, associada ao droplet `209.38.194.84`.
-
-> ⚠️ O Docker ignora o ufw. Por isso todas as portas no `docker-compose.yml` estão em `127.0.0.1:PORTA:PORTA`. Nunca publiques uma base de dados em `0.0.0.0`.
-
-### 7. Enviar o `.env`
-
-O `.env` de produção está no droplet antigo. Corre no teu PC (de uma máquina que tenha acesso SSH ao antigo):
+## 7. `.env`
 
 ```bash
 scp -3 root@188.166.116.252:<pasta do infra>/.env scorexl:~/scorexl/.env
+ssh scorexl "echo 'BACKEND_POSTGRES_PASSWORD=<senha nova>' >> ~/scorexl/.env"
 ```
 
-No novo, acrescenta uma senha nova para o Postgres único:
+## 8. Imagens e nginx
 
 ```bash
-ssh scorexl
-echo 'BACKEND_POSTGRES_PASSWORD=<senha nova>' >> ~/scorexl/.env
-```
-
-### 8. GHCR, imagens e nginx
-
-```bash
-ssh scorexl
+ssh -t scorexl
 cd ~/scorexl
 grep ^GH_PACKAGES_TOKEN= .env | cut -d= -f2- | docker login ghcr.io -u devmacuacua --password-stdin
 docker compose pull
 sudo ./scripts/bootstrap.sh
 ```
 
-Ainda sem downtime — o antigo continua a servir.
-
-### 9. Dump no droplet antigo — ⚠️ início do downtime
+## 9. Dump no antigo ⚠️ começa o downtime
 
 ```bash
 ssh root@188.166.116.252
-cd <pasta do infra>
-git fetch && git worktree add /opt/scorexl-migrate origin/single-backend
-cd /opt/scorexl-migrate
-./scripts/migrate-to-single-backend.sh dump
+cd <pasta do infra> && git fetch && git worktree add /opt/scorexl-migrate origin/single-backend
+cd /opt/scorexl-migrate && ./scripts/migrate-to-single-backend.sh dump
 ```
 
-Para as 13 APIs antigas (as bases continuam ligadas) e cria `backups/<ts>.tgz` com as 13 bases, o umami e a contagem de linhas de cada tabela. O worktree não mexe no que está a correr.
-
-### 10. Copiar o dump para o novo
-
-No teu PC:
+## 10. Copiar o dump
 
 ```bash
 scp -3 root@188.166.116.252:/opt/scorexl-migrate/backups/<ts>.tgz scorexl:~/scorexl/backups/
 ```
 
-### 11. Restaurar e arrancar
+## 11. Restaurar e arrancar
 
 ```bash
 ssh scorexl
@@ -131,56 +82,36 @@ tar -C backups -xzf backups/<ts>.tgz
 ./scripts/deploy.sh
 ```
 
-O `restore` confere cada tabela contra a contagem do dump e recusa restaurar por cima de dados.
-
-### 12. Verificar (antes de mudar o DNS)
+## 12. Verificar
 
 ```bash
 docker compose ps
-docker stats --no-stream
 curl -s -H 'Host: basketball-api.scorexl.com' http://127.0.0.1/api/v1/plan
 curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: scorexl.com' http://127.0.0.1/
-docker logs --tail=100 scorexl-backend
 ```
 
-### 13. DNS no Cloudflare — ✅ fim do downtime
+## 13. DNS ✅ acaba o downtime
 
-Muda os registos A de `188.166.116.252` para `209.38.194.84`:
-
-| Tipo | Nome | Valor |
-|---|---|---|
-| A | `@` | 209.38.194.84 |
-| A | `www` | 209.38.194.84 |
-| A | `api` | 209.38.194.84 |
-| A | `basketball-api`, `nba-api`, `volleyball-api`, `mlb-api`, `afl-api`, `nfl-api`, `nhl-api`, `rugby-api`, `handball-api`, `f1-api`, `mma-api` | 209.38.194.84 |
-| A | `analytics` | 209.38.194.84 |
-
-Com o proxy do Cloudflare ligado (nuvem laranja) a mudança é imediata.
+Cloudflare: todos os registos A de `188.166.116.252` → `209.38.194.84`.
 
 ```bash
 curl -I https://scorexl.com
 ```
 
-### 14. Planos da API-Sports
-
-Todos os desportos arrancam em **FREE**. Se a conta da API-Sports ainda for Pro, passa os que quiseres para **PAID**:
+## 14. Planos
 
 ```bash
-curl -X PUT https://basketball-api.scorexl.com/api/v1/plan \
-  -H "Authorization: Bearer $INTERNAL_API_KEY" -H "Content-Type: application/json" \
-  -d '{"plan":"PAID"}'
+curl -X PUT https://basketball-api.scorexl.com/api/v1/plan -H "Authorization: Bearer $INTERNAL_API_KEY" -H "Content-Type: application/json" -d '{"plan":"PAID"}'
 ```
 
-### Rollback
+## Rollback
 
 1. Cloudflare: registos A de volta para `188.166.116.252`.
-2. No antigo: `docker start <lista que o dump imprimiu>`.
+2. `ssh root@188.166.116.252 'docker start <containers que o dump listou>'`
 
-Só destróis o droplet antigo depois de alguns dias estáveis.
+## Atalho SSH
 
-### Atalho SSH (no teu PC)
-
-Adiciona isto ao `~/.ssh/config`:
+No teu PC, em `~/.ssh/config`:
 
 ```
 Host scorexl
@@ -188,44 +119,3 @@ Host scorexl
     User fmacuacua
     IdentityFile ~/.ssh/id_rsa_do
 ```
-
-Depois basta `ssh scorexl`, e para enviar ficheiros `scp ficheiro scorexl:~/scorexl/`.
-
----
-
-## Variáveis de ambiente (`.env`)
-
-Tudo num só `.env` em `/home/fmacuacua/scorexl` (não versionado; modelo em `.env.example`). O
-`docker-compose.yml` passa-o ao backend e ao web.
-
-**Base de dados e backend**
-
-| Variável | Para quê |
-|---|---|
-| `POSTGRES_USER` | utilizador do Postgres (backend e umami) |
-| `BACKEND_POSTGRES_PASSWORD` | senha do `scorexl-postgres` |
-| `API_SPORTS_KEY` | chave da API-Sports de todos os desportos (`MLB_API_SPORTS_KEY` etc. sobrepõe um só) |
-| `INTERNAL_API_KEY` | protege as rotas 🔒 (sync manual, plano, admin) — partilhada com o web |
-| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_EMAIL` | push notifications |
-| `CORS_ALLOWED_ORIGINS` | origens permitidas no módulo `user` |
-| `BACKEND_JAVA_TOOL_OPTIONS` | opcional, padrão `-Xmx1g -XX:MaxMetaspaceSize=384m -Xss512k` |
-
-**Web**
-
-| Variável | Para quê |
-|---|---|
-| `SCOREXL_*_API_URL` | não precisas de definir: o compose já aponta para `http://scorexl-backend:8080/<módulo>` |
-| `NEXT_PUBLIC_SCOREXL_API_URL`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | entram no build da imagem (GitHub Actions), não aqui |
-| `AUTH_URL`, `AUTH_TRUST_HOST`, `AUTH_SECRET` | sessão (Auth.js) |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | login Google |
-| `CRON_SECRET` | rotas de cron |
-| `UMAMI_SCRIPT_URL`, `UMAMI_WEBSITE_ID` | analytics no site |
-
-**Umami e imagens**
-
-| Variável | Para quê |
-|---|---|
-| `UMAMI_POSTGRES_DB`, `UMAMI_POSTGRES_PASSWORD`, `UMAMI_APP_SECRET` | analytics |
-| `GH_PACKAGES_TOKEN` | `docker login ghcr.io` para puxar as imagens privadas |
-
-As `<DESPORTO>_POSTGRES_*` e `USER_POSTGRES_PASSWORD` só servem ao stack antigo (`main`) e ao `dump`.
