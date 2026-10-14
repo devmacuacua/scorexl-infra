@@ -4,15 +4,11 @@ set -euo pipefail
 # One-time setup of a fresh DigitalOcean droplet (Ubuntu 24.04, 4 GB) for the
 # single-backend stack. Runs as root (via sudo), from your machine:
 #
-#   scp scripts/provision-droplet.sh scorexl:/tmp/
-#   ssh -t scorexl 'sudo bash /tmp/provision-droplet.sh'
-#
-# (first run on a fresh droplet, before root login is disabled:
-#   ssh root@<new-ip> 'bash -s' < scripts/provision-droplet.sh)
+#   cd ~/projects/scorexl-infra && sudo ./scripts/provision-droplet.sh
 #
 # Idempotent: safe to run again. Installs Docker (Docker's own apt repo), nginx,
 # ufw (22 + 80 only), fail2ban, unattended security upgrades, Docker log rotation
-# and a 2 GB swapfile, and creates ~/scorexl (home of the sudo user) for the infra repo.
+# and a 2 GB swapfile, then applies nginx/*.conf (bootstrap.sh).
 #
 # Every container port is published on 127.0.0.1 only (docker-compose.yml) — Docker
 # writes its own iptables rules and would bypass ufw for anything bound to 0.0.0.0.
@@ -74,11 +70,10 @@ systemctl enable --now fail2ban
 rm -f /etc/nginx/sites-enabled/default
 systemctl enable --now nginx
 
-# the infra repo lives in the admin user's home, not in /opt
-if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != root ]; then
-  install -d -o "$SUDO_USER" -g "$SUDO_USER" "/home/$SUDO_USER/scorexl" "/home/$SUDO_USER/scorexl/backups"
-fi
+
+echo ">> nginx sites"
+bash "$(dirname "$0")/bootstrap.sh"
 
 echo
-echo "Provisioned. Docker $(docker --version | awk '{print $3}' | tr -d ,), $(docker compose version --short) compose, $(nginx -v 2>&1 | cut -d/ -f2) nginx."
-echo "Next: copy the infra repo + .env to ~/scorexl (README-setup-prod.md)."
+echo "Provisioned. Docker $(docker --version | awk '{print $3}' | tr -d ,), $(docker compose version --short) compose."
+echo "Next: cp .env.example .env && nano .env && ./scripts/deploy.sh"

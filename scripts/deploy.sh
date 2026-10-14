@@ -68,6 +68,10 @@ fi
 
 echo "Deploy started at $(date)"
 
+# GHCR login from .env (images are private)
+TOKEN=$(grep -E '^GH_PACKAGES_TOKEN=' "$(dirname "$0")/../.env" 2>/dev/null | cut -d= -f2-)
+[ -n "$TOKEN" ] && echo "$TOKEN" | docker login ghcr.io -u devmacuacua --password-stdin >/dev/null
+
 echo "Pulling latest images..."
 docker compose "${COMPOSE_ARGS[@]}" pull
 

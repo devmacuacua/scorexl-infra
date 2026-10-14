@@ -4,7 +4,7 @@
 
 | IP | Utilizador | Projeto |
 |---|---|---|
-| `209.38.194.84` | `fmacuacua` (root bloqueado) | `/home/fmacuacua/scorexl` |
+| `209.38.194.84` | `fmacuacua` (root bloqueado) | `/home/fmacuacua/projects/scorexl-infra` |
 
 O droplet antigo (`188.166.116.252`) foi destruído: a instalação começou do zero, sem migração de dados.
 Os jogos e as odds voltam a encher-se pelos jobs agendados do backend; o histórico de picks, utilizadores
@@ -40,7 +40,7 @@ subdomínios públicos.
 
 ## Variáveis de ambiente
 
-Tudo num só `.env` em `~/scorexl` no servidor (no local: `scorexl-infra/.env`) (não versionado; modelo em `.env.example`). O
+Tudo num só `.env` em `~/projects/scorexl-infra` no servidor (no local: `scorexl-infra/.env`) (não versionado; modelo em `.env.example`). O
 `docker-compose.yml` passa-o ao backend e ao web.
 
 **Base de dados e backend**
@@ -90,9 +90,9 @@ Cada desporto está em FREE (padrão, 100 chamadas/dia, sem explorer) ou PAID. D
 
 | Script | Faz |
 |---|---|
-| `provision-droplet.sh` | setup de um Ubuntu 24.04: Docker, nginx, ufw (22, 80), fail2ban, updates automáticos, swap 2 GB, logs limitados, cria `~/scorexl`. Pode correr de novo. |
+| `provision-droplet.sh` | setup de um Ubuntu 24.04: Docker, nginx, ufw (22, 80), fail2ban, updates automáticos, swap 2 GB, logs limitados, aplica o nginx. Corre do clone; pode correr de novo. |
 | `bootstrap.sh` | instala nginx (e Docker se faltar), copia `nginx/*.conf`, recarrega |
-| `deploy.sh` | `compose pull` + `up -d` (recusa só se houver containers antigos sem migração) |
+| `deploy.sh` | login no GHCR (`GH_PACKAGES_TOKEN` do `.env`) + `compose pull` + `up -d` |
 | `migrate-to-single-backend.sh` | ver acima |
 | `dev.sh` | local: build a partir de `../scorexl-backend`; não sobe o web (corre com `pnpm dev`) |
 

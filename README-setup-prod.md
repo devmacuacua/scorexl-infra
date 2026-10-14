@@ -1,96 +1,56 @@
 # Setup de produção
 
-Servidor `209.38.194.84` · utilizador `fmacuacua` · projeto em `/home/fmacuacua/scorexl`.
+Servidor `209.38.194.84` · utilizador `fmacuacua` · projeto em `~/projects/scorexl-infra`.
 
-Estado (2026-10-14): 1 ✅ 2 ✅ 3 ⚠️ 4 ✅ 5 ✅ 7 ✅ — próximo: **3**, **6**, **8**.
+## 1. Droplet ✅
 
-## 1. Criar o droplet ✅
+Painel: Ubuntu 24.04 · 4 GB / 2 vCPU · chave `id_rsa_do` · backups ligados.
+Networking → Firewalls: portas 22 e 80.
 
-Painel DigitalOcean: Ubuntu 24.04 · 4 GB / 2 vCPU · chave `id_rsa_do` · backups ligados.
-
-## 2. Provisionar ✅
-
-```bash
-scp scripts/provision-droplet.sh scorexl:/tmp/
-ssh -t scorexl 'sudo bash /tmp/provision-droplet.sh'
-rsync -a --exclude .env --exclude backups --exclude .git ./ scorexl:~/scorexl/
-```
-
-## 3. Redimensionar ⚠️ (está com 2 GB)
-
-Painel: Power off → Resize → 4 GB / 2 vCPU, "CPU and RAM + disk" → Power on.
-
-## 4. Utilizador ✅
+## 2. Utilizador ✅
 
 ```bash
-ssh -i ~/.ssh/id_rsa_do root@209.38.194.84
-timedatectl set-timezone Africa/Maputo
-adduser fmacuacua
-usermod -aG sudo,docker fmacuacua
-rsync --archive --chown=fmacuacua:fmacuacua ~/.ssh /home/fmacuacua
+ssh root@209.38.194.84
+adduser fmacuacua && usermod -aG sudo fmacuacua
+rsync -a --chown=fmacuacua:fmacuacua ~/.ssh /home/fmacuacua
+sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/; s/^#\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config && systemctl restart ssh
 ```
 
-## 5. SSH ✅
-
-```bash
-sudo nano /etc/ssh/sshd_config      # PermitRootLogin no · PasswordAuthentication no
-sudo systemctl restart ssh
-```
-
-## 6. Cloud Firewall
-
-Painel: Networking → Firewalls → Create · portas 22 e 80 · associar a `209.38.194.84`.
-
-## 7. `.env` ✅
-
-Já criado. Para editar:
+## 3. Chave do GitHub
 
 ```bash
 ssh scorexl
-nano ~/scorexl/.env
+ssh-keygen -t ed25519 -N '' -f ~/.ssh/id_ed25519 && cat ~/.ssh/id_ed25519.pub
 ```
 
-## 8. Imagens e nginx
+GitHub → `scorexl-infra` → Settings → Deploy keys → Add (só leitura).
+
+## 4. Clonar e provisionar
 
 ```bash
-ssh -t scorexl
-cd ~/scorexl
-grep ^GH_PACKAGES_TOKEN= .env | cut -d= -f2- | docker login ghcr.io -u devmacuacua --password-stdin
-docker compose pull
-sudo ./scripts/bootstrap.sh
+git clone -b single-backend git@github.com:devmacuacua/scorexl-infra.git ~/projects/scorexl-infra
+cd ~/projects/scorexl-infra && sudo ./scripts/provision-droplet.sh && sudo usermod -aG docker fmacuacua
 ```
 
-## 9. Arrancar
+Sai e volta a entrar (grupo `docker`).
+
+## 5. `.env`
 
 ```bash
-ssh scorexl 'cd ~/scorexl && ./scripts/deploy.sh'
+cd ~/projects/scorexl-infra && cp .env.example .env && nano .env
 ```
 
-## 10. Verificar
+## 6. Arrancar
 
 ```bash
-docker compose ps
-curl -s -H 'Host: basketball-api.scorexl.com' http://127.0.0.1/api/v1/plan
-curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: scorexl.com' http://127.0.0.1/
+cd ~/projects/scorexl-infra && ./scripts/deploy.sh
 ```
 
-## 11. DNS
+## 7. DNS
 
-Cloudflare: registos A `@`, `www`, `api`, `analytics` e todos os `*-api` → `209.38.194.84` (proxy ligado).
+Cloudflare: `@`, `www`, `api`, `analytics` e todos os `*-api` → A `209.38.194.84` (proxy ligado).
 
-```bash
-curl -I https://scorexl.com
-```
-
-## 12. Planos
-
-```bash
-curl -X PUT https://basketball-api.scorexl.com/api/v1/plan -H "Authorization: Bearer $INTERNAL_API_KEY" -H "Content-Type: application/json" -d '{"plan":"PAID"}'
-```
-
-## Atalho SSH
-
-No teu PC, em `~/.ssh/config`:
+## Atalho SSH (no teu PC, `~/.ssh/config`)
 
 ```
 Host scorexl

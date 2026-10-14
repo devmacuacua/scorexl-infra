@@ -34,14 +34,14 @@ docker volume rm scorexl_backend_postgres_data
 ### Publicar versão nova
 
 ```bash
-ssh scorexl 'cd ~/scorexl && ./scripts/deploy.sh'
+ssh scorexl 'cd ~/projects/scorexl-infra && git pull && ./scripts/deploy.sh'
 ```
 
 ### Ver estado e logs
 
 ```bash
 ssh scorexl
-docker compose -f ~/scorexl/docker-compose.yml ps
+docker compose -f ~/projects/scorexl-infra/docker-compose.yml ps
 docker logs -f --tail=200 scorexl-backend
 docker logs -f --tail=200 scorexl-web
 ```
@@ -49,16 +49,15 @@ docker logs -f --tail=200 scorexl-web
 ### Mudar o nginx
 
 ```bash
-rsync -a nginx/ scorexl:~/scorexl/nginx/
-ssh -t scorexl 'cd ~/scorexl && sudo ./scripts/bootstrap.sh'
+ssh -t scorexl 'cd ~/projects/scorexl-infra && git pull && sudo ./scripts/bootstrap.sh'
 ```
 
 ### Mudar o `.env`
 
 ```bash
 ssh scorexl
-nano ~/scorexl/.env
-cd ~/scorexl && docker compose up -d
+nano ~/projects/scorexl-infra/.env
+cd ~/projects/scorexl-infra && docker compose up -d
 ```
 
 ### Abrir a base no teu PC
