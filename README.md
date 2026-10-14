@@ -15,6 +15,43 @@ Produção do ScoreXL: `docker-compose.yml`, configs do nginx e scripts.
 O nginx (porta 80, atrás do Cloudflare) liga os domínios: `scorexl.com` → web,
 `api.scorexl.com` → `/football`, `<desporto>-api.scorexl.com` → `/<desporto>`, `analytics.scorexl.com` → umami.
 
+## Variáveis de ambiente
+
+Tudo num só `.env` em `/opt/scorexl-infra` (não versionado; modelo em `.env.example`). O
+`docker-compose.yml` passa-o ao backend e ao web.
+
+**Base de dados e backend**
+
+| Variável | Para quê |
+|---|---|
+| `POSTGRES_USER` | utilizador do Postgres (backend e umami) |
+| `BACKEND_POSTGRES_PASSWORD` | senha do `scorexl-postgres` |
+| `API_SPORTS_KEY` | chave da API-Sports de todos os desportos (`MLB_API_SPORTS_KEY` etc. sobrepõe um só) |
+| `INTERNAL_API_KEY` | protege as rotas 🔒 (sync manual, plano, admin) — partilhada com o web |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_EMAIL` | push notifications |
+| `CORS_ALLOWED_ORIGINS` | origens permitidas no módulo `user` |
+| `BACKEND_JAVA_TOOL_OPTIONS` | opcional, padrão `-Xmx1g -XX:MaxMetaspaceSize=384m -Xss512k` |
+
+**Web**
+
+| Variável | Para quê |
+|---|---|
+| `SCOREXL_*_API_URL` | não precisas de definir: o compose já aponta para `http://scorexl-backend:8080/<módulo>` |
+| `NEXT_PUBLIC_SCOREXL_API_URL`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | entram no build da imagem (GitHub Actions), não aqui |
+| `AUTH_URL`, `AUTH_TRUST_HOST`, `AUTH_SECRET` | sessão (Auth.js) |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | login Google |
+| `CRON_SECRET` | rotas de cron |
+| `UMAMI_SCRIPT_URL`, `UMAMI_WEBSITE_ID` | analytics no site |
+
+**Umami e imagens**
+
+| Variável | Para quê |
+|---|---|
+| `UMAMI_POSTGRES_DB`, `UMAMI_POSTGRES_PASSWORD`, `UMAMI_APP_SECRET` | analytics |
+| `GH_PACKAGES_TOKEN` | `docker login ghcr.io` para puxar as imagens privadas |
+
+As `<DESPORTO>_POSTGRES_*` e `USER_POSTGRES_PASSWORD` só servem ao stack antigo (`main`) e ao `dump`.
+
 ---
 
 # Novo droplet — passo a passo
