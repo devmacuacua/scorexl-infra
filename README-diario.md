@@ -57,7 +57,7 @@ ssh -t scorexl 'cd ~/projects/scorexl-infra && git pull && sudo ./scripts/bootst
 ```bash
 ssh scorexl
 nano ~/projects/scorexl-infra/.env
-cd ~/projects/scorexl-infra && docker compose up -d
+cd ~/projects/scorexl-infra && ./scripts/deploy.sh
 ```
 
 ### Abrir a base no teu PC
