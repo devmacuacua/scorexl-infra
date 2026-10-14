@@ -1,3 +1,4 @@
 .env
 .env.bak*
 *.swp
+.env.prod
