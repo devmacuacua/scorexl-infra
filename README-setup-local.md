@@ -2,18 +2,27 @@
 
 Requisitos: Docker, Node 22 + pnpm, Java 21 (só para o modo B).
 
-## 1. Clonar
+## 1. Clonar o scorexl-infra
 
 ```bash
-mkdir -p ~/workspace-scorexl && cd ~/workspace-scorexl
-for r in scorexl-infra scorexl-backend scorexl-web scorexl-mobile; do git clone git@github.com:devmacuacua/$r.git; done
-git -C scorexl-infra checkout single-backend
+mkdir -p ~/projects && cd ~/projects
+git clone git@github.com:devmacuacua/scorexl-infra.git
+cd scorexl-infra && git checkout single-backend
 ```
 
-## 2. `.env` do infra
+## 2. Clonar o resto (ao lado do infra)
 
 ```bash
-cd ~/workspace-scorexl/scorexl-infra
+cd ~/projects
+git clone git@github.com:devmacuacua/scorexl-backend.git
+git clone git@github.com:devmacuacua/scorexl-web.git
+git clone git@github.com:devmacuacua/scorexl-mobile.git
+```
+
+## 3. `.env` do infra
+
+```bash
+cd ~/projects/scorexl-infra
 cat > .env <<'X'
 POSTGRES_USER=scorexl
 BACKEND_POSTGRES_PASSWORD=scorexl
@@ -22,32 +31,32 @@ API_SPORTS_KEY=
 X
 ```
 
-## 3A. Backend em Docker
+## 4A. Backend em Docker
 
 ```bash
-cd ~/workspace-scorexl/scorexl-infra
+cd ~/projects/scorexl-infra
 ./scripts/dev.sh up
 ```
 
-## 3B. Backend no IDE
+## 4B. Backend no IDE
 
 ```bash
-cd ~/workspace-scorexl/scorexl-infra && docker compose up -d scorexl-postgres
-cd ~/workspace-scorexl/scorexl-backend
+cd ~/projects/scorexl-infra && docker compose up -d scorexl-postgres
+cd ~/projects/scorexl-backend
 export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5440/scorexl SPRING_DATASOURCE_USERNAME=scorexl SPRING_DATASOURCE_PASSWORD=scorexl INTERNAL_API_KEY=dev
 ./mvnw spring-boot:run
 ```
 
-## 4. Confirmar o backend
+## 5. Confirmar o backend
 
 ```bash
 curl -s http://localhost:8080/mlb/api/v1/plan
 ```
 
-## 5. Web
+## 6. Web
 
 ```bash
-cd ~/workspace-scorexl/scorexl-web
+cd ~/projects/scorexl-web
 pnpm install
 cat > .env.local <<'X'
 SCOREXL_API_URL=http://localhost:8080/football
@@ -69,12 +78,12 @@ X
 pnpm dev
 ```
 
-## 6. Mobile
+## 7. Mobile
 
-Troca `192.168.1.10` pelo IP do teu PC (precisa do modo 3B).
+Troca `192.168.1.10` pelo IP do teu PC (precisa do modo 4B).
 
 ```bash
-cd ~/workspace-scorexl/scorexl-mobile
+cd ~/projects/scorexl-mobile
 npm install
 cat > .env <<'X'
 EXPO_PUBLIC_FOOTBALL_API_URL=http://192.168.1.10:8080/football
@@ -84,7 +93,7 @@ X
 npm run start
 ```
 
-## 7. Dados de produção (opcional)
+## 8. Dados de produção (opcional)
 
 ```bash
 ssh -N -L 5441:127.0.0.1:5440 scorexl &

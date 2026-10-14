@@ -5,7 +5,7 @@
 ### Ligar / desligar
 
 ```bash
-cd ~/workspace-scorexl/scorexl-infra
+cd ~/projects/scorexl-infra
 ./scripts/dev.sh up
 ./scripts/dev.sh down
 ```

@@ -99,6 +99,6 @@ Cada desporto está em FREE (padrão, 100 chamadas/dia, sem explorer) ou PAID. D
 ## Notas do setup local
 
 - `API_SPORTS_KEY` vazia no local: com a chave real, os jobs gastam a cota de produção (a conta é a mesma).
-- Modo 3A (Docker) — o backend só escuta em 127.0.0.1; o telemóvel não chega lá. Para o mobile, usa o modo 3B.
+- Modo 4A (Docker) — o backend só escuta em 127.0.0.1; o telemóvel não chega lá. Para o mobile, usa o modo 4B.
 - O módulo `user` não tem endereço público: sem backend local, login e favoritos não funcionam.
 - Mobile: usa o IP do PC na rede, não `localhost`.
