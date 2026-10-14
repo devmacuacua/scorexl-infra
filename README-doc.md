@@ -1,13 +1,14 @@
 # scorexl-infra — detalhes
 
-## Servidores
+## Servidor
 
-| | IP | Utilizador | Projeto |
-|---|---|---|---|
-| novo | `209.38.194.84` | `fmacuacua` (root bloqueado) | `/home/fmacuacua/scorexl` |
-| antigo | `188.166.116.252` | `root` (SSH só de IPs liberados) | stack antigo, branch `main` |
+| IP | Utilizador | Projeto |
+|---|---|---|
+| `209.38.194.84` | `fmacuacua` (root bloqueado) | `/home/fmacuacua/scorexl` |
 
-Branch `single-backend` = stack novo. Branch `main` = stack antigo, em produção até ao cutover.
+O droplet antigo (`188.166.116.252`) foi destruído: a instalação começou do zero, sem migração de dados.
+Os jogos e as odds voltam a encher-se pelos jobs agendados do backend; o histórico de picks, utilizadores
+e assinaturas antigos perdeu-se.
 
 ## Stack
 
@@ -72,22 +73,13 @@ Tudo num só `.env` em `~/scorexl` no servidor (no local: `scorexl-infra/.env`) 
 | `UMAMI_POSTGRES_DB`, `UMAMI_POSTGRES_PASSWORD`, `UMAMI_APP_SECRET` | analytics |
 | `GH_PACKAGES_TOKEN` | `docker login ghcr.io` para puxar as imagens privadas |
 
-As `<DESPORTO>_POSTGRES_*` e `USER_POSTGRES_PASSWORD` só servem ao stack antigo (`main`) e ao `dump`.
+As `<DESPORTO>_POSTGRES_*` e `USER_POSTGRES_PASSWORD` são do stack antigo e já não são usadas.
 
-## Migração (`migrate-to-single-backend.sh`)
+## Migração
 
-| Modo | Onde | Faz |
-|---|---|---|
-| `dump` | antigo | para as 13 APIs (as bases ficam ligadas), faz `pg_dump` de cada base + umami, conta as linhas de cada tabela, cria `backups/<ts>.tgz` |
-| `restore <dir>` | novo | restaura cada base no seu schema, restaura o umami, compara a contagem tabela a tabela, escreve `.single-backend-migrated` |
-| `all` | mesmo servidor | `dump` + `restore` seguidos |
-
-- Recusa restaurar por cima de uma base com dados.
-- Se falhar enquanto as APIs antigas estão paradas, volta a ligá-las.
-- Nunca mexe nos volumes antigos — são o caminho de rollback.
-- O `deploy.sh` recusa correr sem o ficheiro `.single-backend-migrated`.
-- Se o `restore` falhar a meio: `docker compose rm -sf scorexl-postgres && docker volume rm scorexl_backend_postgres_data` e repete.
-- O dump corre num `git worktree` no antigo para não alterar o checkout que está em produção.
+Não usada (não havia dados para migrar). O `migrate-to-single-backend.sh` fica no repo para o caso de um
+servidor com o stack antigo: o `deploy.sh` só recusa correr se encontrar containers `scorexl-*-api` antigos
+sem migração feita.
 
 ## Plano da API-Sports
 
@@ -100,7 +92,7 @@ Cada desporto está em FREE (padrão, 100 chamadas/dia, sem explorer) ou PAID. D
 |---|---|
 | `provision-droplet.sh` | setup de um Ubuntu 24.04: Docker, nginx, ufw (22, 80), fail2ban, updates automáticos, swap 2 GB, logs limitados, cria `~/scorexl`. Pode correr de novo. |
 | `bootstrap.sh` | instala nginx (e Docker se faltar), copia `nginx/*.conf`, recarrega |
-| `deploy.sh` | `compose pull` + `up -d` |
+| `deploy.sh` | `compose pull` + `up -d` (recusa só se houver containers antigos sem migração) |
 | `migrate-to-single-backend.sh` | ver acima |
 | `dev.sh` | local: build a partir de `../scorexl-backend`; não sobe o web (corre com `pnpm dev`) |
 

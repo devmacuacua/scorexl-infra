@@ -56,14 +56,13 @@ else
   done
 fi
 
-# Single-backend cutover guard (2026-10-14): docker-compose.yml no longer has
-# the per-sport *-api / *-postgres services. Deploying it before the data is
-# migrated would start scorexl-backend on an EMPTY database and
-# --remove-orphans would stop every old API. scripts/migrate-to-single-backend.sh
-# writes this marker only after every DB was restored and row counts matched.
-if [ ! -f "$(dirname "$0")/../.single-backend-migrated" ]; then
-  echo "Refusing to deploy: data not migrated to scorexl-postgres yet." >&2
-  echo "Run ./scripts/migrate-to-single-backend.sh first (see README.md)." >&2
+# Guard: on a host that still runs the old per-sport stack, deploying this compose
+# file before migrating would start scorexl-backend on an EMPTY database next to the
+# old APIs. A fresh server (no old containers) deploys straight away.
+if docker ps -a --format '{{.Names}}' | grep -qE '^scorexl-[a-z0-9]+-api$' \
+   && [ ! -f "$(dirname "$0")/../.single-backend-migrated" ]; then
+  echo "Refusing to deploy: old scorexl-*-api containers here and data not migrated yet." >&2
+  echo "Run ./scripts/migrate-to-single-backend.sh first, or remove the old containers." >&2
   exit 1
 fi
 

@@ -1,8 +1,8 @@
 # Setup de produção
 
-Servidor novo `209.38.194.84` · antigo `188.166.116.252` · projeto em `/home/fmacuacua/scorexl`.
+Servidor `209.38.194.84` · utilizador `fmacuacua` · projeto em `/home/fmacuacua/scorexl`.
 
-Estado (2026-10-14): 1 ✅ 2 ✅ 3 ⚠️ 4 ✅ 5 ✅ — próximo: **3**, **6**, **7**.
+Estado (2026-10-14): 1 ✅ 2 ✅ 3 ⚠️ 4 ✅ 5 ✅ 7 ✅ — próximo: **3**, **6**, **8**.
 
 ## 1. Criar o droplet ✅
 
@@ -41,11 +41,13 @@ sudo systemctl restart ssh
 
 Painel: Networking → Firewalls → Create · portas 22 e 80 · associar a `209.38.194.84`.
 
-## 7. `.env`
+## 7. `.env` ✅
+
+Já criado. Para editar:
 
 ```bash
-scp -3 root@188.166.116.252:<pasta do infra>/.env scorexl:~/scorexl/.env
-ssh scorexl "echo 'BACKEND_POSTGRES_PASSWORD=<senha nova>' >> ~/scorexl/.env"
+ssh scorexl
+nano ~/scorexl/.env
 ```
 
 ## 8. Imagens e nginx
@@ -58,31 +60,13 @@ docker compose pull
 sudo ./scripts/bootstrap.sh
 ```
 
-## 9. Dump no antigo ⚠️ começa o downtime
+## 9. Arrancar
 
 ```bash
-ssh root@188.166.116.252
-cd <pasta do infra> && git fetch && git worktree add /opt/scorexl-migrate origin/single-backend
-cd /opt/scorexl-migrate && ./scripts/migrate-to-single-backend.sh dump
+ssh scorexl 'cd ~/scorexl && ./scripts/deploy.sh'
 ```
 
-## 10. Copiar o dump
-
-```bash
-scp -3 root@188.166.116.252:/opt/scorexl-migrate/backups/<ts>.tgz scorexl:~/scorexl/backups/
-```
-
-## 11. Restaurar e arrancar
-
-```bash
-ssh scorexl
-cd ~/scorexl
-tar -C backups -xzf backups/<ts>.tgz
-./scripts/migrate-to-single-backend.sh restore backups/<ts>
-./scripts/deploy.sh
-```
-
-## 12. Verificar
+## 10. Verificar
 
 ```bash
 docker compose ps
@@ -90,24 +74,19 @@ curl -s -H 'Host: basketball-api.scorexl.com' http://127.0.0.1/api/v1/plan
 curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: scorexl.com' http://127.0.0.1/
 ```
 
-## 13. DNS ✅ acaba o downtime
+## 11. DNS
 
-Cloudflare: todos os registos A de `188.166.116.252` → `209.38.194.84`.
+Cloudflare: registos A `@`, `www`, `api`, `analytics` e todos os `*-api` → `209.38.194.84` (proxy ligado).
 
 ```bash
 curl -I https://scorexl.com
 ```
 
-## 14. Planos
+## 12. Planos
 
 ```bash
 curl -X PUT https://basketball-api.scorexl.com/api/v1/plan -H "Authorization: Bearer $INTERNAL_API_KEY" -H "Content-Type: application/json" -d '{"plan":"PAID"}'
 ```
-
-## Rollback
-
-1. Cloudflare: registos A de volta para `188.166.116.252`.
-2. `ssh root@188.166.116.252 'docker start <containers que o dump listou>'`
 
 ## Atalho SSH
 
