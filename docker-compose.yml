@@ -7,10 +7,6 @@ services:
   # Public subdomains (api., basketball-api., ...) still work: nginx rewrites
   # each one to its module prefix, e.g. basketball-api.scorexl.com/x ->
   # 127.0.0.1:8080/basketball/x. See nginx/*.conf.
-  #
-  # The old per-sport postgres volumes are deliberately NOT declared here and
-  # are never touched — they stay on the host as the rollback path. Migrate
-  # their data with scripts/migrate-to-single-backend.sh.
   # ════════════════════════════════════════════════════════════════════════
 
   scorexl-backend:
@@ -132,7 +128,7 @@ services:
 
 volumes:
   scorexl_postgres_data:
-    # fixed name: migrate-to-single-backend.sh tells you to wipe exactly this one on a failed run
+    # fixed name, independent of the checkout folder — production data lives here, never rename
     name: scorexl_backend_postgres_data
   scorexl_umami_postgres_data:
 

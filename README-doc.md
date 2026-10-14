@@ -60,7 +60,7 @@ Tudo num só `.env` em `~/projects/scorexl-infra` no servidor (no local: `scorex
 | Variável | Para quê |
 |---|---|
 | `SCOREXL_*_API_URL` | não precisas de definir: o compose já aponta para `http://scorexl-backend:8080/<módulo>` |
-| `NEXT_PUBLIC_SCOREXL_API_URL`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | entram no build da imagem (GitHub Actions), não aqui |
+| `NEXT_PUBLIC_BACKEND_URL`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | entram no build da imagem (GitHub Actions), não aqui |
 | `AUTH_URL`, `AUTH_TRUST_HOST`, `AUTH_SECRET` | sessão (Auth.js) |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | login Google |
 | `CRON_SECRET` | rotas de cron |
@@ -75,12 +75,6 @@ Tudo num só `.env` em `~/projects/scorexl-infra` no servidor (no local: `scorex
 
 As `<DESPORTO>_POSTGRES_*` e `USER_POSTGRES_PASSWORD` são do stack antigo e já não são usadas.
 
-## Migração
-
-Não usada (não havia dados para migrar). O `migrate-to-single-backend.sh` fica no repo para o caso de um
-servidor com o stack antigo: o `deploy.sh` só recusa correr se encontrar containers `scorexl-*-api` antigos
-sem migração feita.
-
 ## Plano da API-Sports
 
 Cada desporto está em FREE (padrão, 100 chamadas/dia, sem explorer) ou PAID. Detalhes no
@@ -92,9 +86,8 @@ Cada desporto está em FREE (padrão, 100 chamadas/dia, sem explorer) ou PAID. D
 |---|---|
 | `provision-droplet.sh` | setup de um Ubuntu 24.04: Docker, nginx, ufw (22, 80), fail2ban, updates automáticos, swap 2 GB, logs limitados, aplica o nginx. Corre do clone; pode correr de novo. |
 | `bootstrap.sh` | instala nginx (e Docker se faltar), copia `nginx/*.conf`, recarrega |
-| `deploy.sh` | login no GHCR (`GH_PACKAGES_TOKEN` do `.env`) + `compose pull` + `up -d` |
-| `migrate-to-single-backend.sh` | ver acima |
-| `dev.sh` | local: build a partir de `../scorexl-backend`; não sobe o web (corre com `pnpm dev`) |
+| `deploy.sh` | login no GHCR (`GH_PACKAGES_TOKEN` do `.env`) + `compose pull` + `up -d` + limpa imagens antigas |
+| `dev.sh` | local: `up` / `down` / `logs` / `build` — backend (build de `../scorexl-backend`), Postgres e umami; o web corre com `pnpm dev` |
 
 ## Notas do setup local
 

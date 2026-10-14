@@ -1,97 +1,17 @@
 #!/usr/bin/env bash
 set -e
 
-# Usage:
-#   ./scripts/deploy.sh                 # pull + up everything (all sports + web)
-#   ./scripts/deploy.sh football        # pull + up only the football block
-#   ./scripts/deploy.sh --profile nba   # same, explicit flag form
-#
-# scorexl-web / scorexl-user-api / scorexl-user-postgres have no profile —
-# they're always-on infra shared by every sport, so they're included in every
-# invocation regardless of which sport (if any) is selected.
-#
-# This only runs `docker compose pull && up -d` — it does not touch nginx or
-# any old infra repo's containers. Cutover from the old per-sport repos is a
-# separate, manual step — see README.md.
+# Produção: login no GHCR (GH_PACKAGES_TOKEN do .env), pull das imagens :latest, up -d.
+#   cd ~/projects/scorexl-infra && ./scripts/deploy.sh
 
-# afl/nhl/rugby/handball/f1/mma removed 2026-09-07 — never produced a
-# single value_bet, commented out in docker-compose.yml, no point deploying
-# them by default. nfl re-added 2026-09-09 — pipeline-trigger bug fixed,
-# real picks confirmed flowing. afl/nhl/rugby/handball/f1/mma re-added
-# 2026-09-11 at direct user instruction, without the same verification nfl
-# got — see docker-compose.yml's comment on that section for the caveats
-# (AFL/NHL near-zero odds coverage or off-season, f1/mma predictions-only).
-VALID_SPORTS=(football basketball nba volleyball mlb nfl afl nhl rugby handball f1 mma)
-SPORT=""
+cd "$(dirname "$0")/.."
 
-case "$1" in
-  --profile)
-    SPORT="$2"
-    ;;
-  "" )
-    SPORT=""
-    ;;
-  *)
-    SPORT="$1"
-    ;;
-esac
-
-COMPOSE_ARGS=()
-
-if [ -n "$SPORT" ]; then
-  match=false
-  for s in "${VALID_SPORTS[@]}"; do
-    [ "$s" = "$SPORT" ] && match=true
-  done
-  if [ "$match" != true ]; then
-    echo "Unknown sport '$SPORT'. Valid options: ${VALID_SPORTS[*]}" >&2
-    exit 1
-  fi
-  echo "Deploying only: $SPORT (+ always-on web/user-api)"
-  COMPOSE_ARGS=(--profile "$SPORT")
-else
-  echo "Deploying everything (all sports + web)"
-  for s in "${VALID_SPORTS[@]}"; do
-    COMPOSE_ARGS+=(--profile "$s")
-  done
-fi
-
-# Guard: on a host that still runs the old per-sport stack, deploying this compose
-# file before migrating would start scorexl-backend on an EMPTY database next to the
-# old APIs. A fresh server (no old containers) deploys straight away.
-if docker ps -a --format '{{.Names}}' | grep -qE '^scorexl-[a-z0-9]+-api$' \
-   && [ ! -f "$(dirname "$0")/../.single-backend-migrated" ]; then
-  echo "Refusing to deploy: old scorexl-*-api containers here and data not migrated yet." >&2
-  echo "Run ./scripts/migrate-to-single-backend.sh first, or remove the old containers." >&2
-  exit 1
-fi
-
-echo "Deploy started at $(date)"
-
-# GHCR login from .env (images are private)
-TOKEN=$(grep -E '^GH_PACKAGES_TOKEN=' "$(dirname "$0")/../.env" 2>/dev/null | cut -d= -f2-)
+TOKEN=$(grep -E '^GH_PACKAGES_TOKEN=' .env 2>/dev/null | cut -d= -f2-)
 [ -n "$TOKEN" ] && echo "$TOKEN" | docker login ghcr.io -u devmacuacua --password-stdin >/dev/null
 
-echo "Pulling latest images..."
-docker compose "${COMPOSE_ARGS[@]}" pull
-
-# --remove-orphans only when deploying everything: with a partial --profile
-# deploy, compose treats every other sport's containers as "orphans" (they're
-# not part of the active profile set for this invocation) and would stop
-# them, which defeats the point of a partial deploy. Only safe to prune
-# orphans when every profile is active, i.e. no sport arg was given.
-UP_ARGS=(up -d)
-if [ -z "$SPORT" ]; then
-  UP_ARGS+=(--remove-orphans)
-fi
-
-echo "Recreating containers..."
-docker compose "${COMPOSE_ARGS[@]}" "${UP_ARGS[@]}"
-
-echo "Running containers:"
-docker ps
-
-echo "Cleaning unused images..."
-docker image prune -f
-
-echo "Deploy completed successfully!"
+echo "Deploy $(date)"
+docker compose pull
+docker compose up -d --remove-orphans
+docker compose ps
+docker image prune -f >/dev/null
+echo "Deploy ok"

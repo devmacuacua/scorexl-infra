@@ -71,7 +71,6 @@ SCOREXL_RUGBY_API_URL=http://localhost:8080/rugby
 SCOREXL_HANDBALL_API_URL=http://localhost:8080/handball
 SCOREXL_MMA_API_URL=http://localhost:8080/mma
 SCOREXL_USER_API_URL=http://localhost:8080/user
-NEXT_PUBLIC_SCOREXL_API_URL=http://localhost:8080/football/api/v1
 NEXT_PUBLIC_BACKEND_URL=http://localhost:8080/football
 INTERNAL_API_KEY=dev
 X

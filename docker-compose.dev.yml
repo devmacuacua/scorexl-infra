@@ -1,11 +1,5 @@
-# Auto-generated build-context overlay for local development.
-#
-# Only used via scripts/dev.sh — never referenced by scripts/deploy.sh, so
-# production always pulls prebuilt images from GHCR and is unaffected by
-# this file (production has no sibling source checkouts to build from).
-#
-# Regenerate if new services are added to docker-compose.yml:
-#   ./scripts/dev.sh regen
+# Local: faz build do backend a partir de ../scorexl-backend em vez de puxar do GHCR.
+# Só usado pelo scripts/dev.sh.
 services:
   scorexl-backend:
     build:
