@@ -1,6 +1,46 @@
-# scorexl-infra — dia a dia
+# Dia a dia
 
-Tudo no servidor novo, em `/opt/scorexl-infra` (entra com `ssh scorexl` — atalho no README-setup).
+Primeira vez: [README-setup-local.md](README-setup-local.md) · [README-setup-prod.md](README-setup-prod.md).
+
+# Local
+
+Na tua máquina, em `~/workspace-scorexl`.
+
+## 1. Ligar e desligar
+
+```bash
+cd scorexl-infra
+./scripts/dev.sh up             # backend (build do ../scorexl-backend) + Postgres + umami
+./scripts/dev.sh logs
+./scripts/dev.sh down
+```
+
+Ou, a mexer no backend: `docker compose up -d scorexl-postgres` e `./mvnw spring-boot:run` no `scorexl-backend`.
+
+## 2. Web e mobile
+
+```bash
+cd scorexl-web && pnpm dev                 # http://localhost:3000
+cd scorexl-mobile && npm run start
+```
+
+## 3. Base local
+
+```bash
+docker exec -it scorexl-postgres psql -U scorexl -d scorexl
+```
+
+## 4. Recomeçar com a base vazia
+
+```bash
+cd scorexl-infra
+./scripts/dev.sh down
+docker volume rm scorexl_backend_postgres_data
+```
+
+# Produção
+
+No servidor novo, em `/opt/scorexl-infra` (entra com `ssh scorexl` — atalho no README-setup-prod).
 
 ## 1. Publicar uma versão nova
 

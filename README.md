@@ -15,5 +15,8 @@ Produção do ScoreXL: `docker-compose.yml`, configs do nginx e scripts.
 O nginx (porta 80, atrás do Cloudflare) liga os domínios: `scorexl.com` → web,
 `api.scorexl.com` → `/football`, `<desporto>-api.scorexl.com` → `/<desporto>`, `analytics.scorexl.com` → umami.
 
-- **[README-setup.md](README-setup.md)** — primeira vez: novo VPS passo a passo, variáveis de ambiente, migração
-- **[README-diario.md](README-diario.md)** — dia a dia: deploy, logs, base de dados, planos, scripts
+Todo o setup do projeto (backend, web, mobile e servidor) está aqui:
+
+- **[README-setup-local.md](README-setup-local.md)** — primeira vez na tua máquina: clonar, `.env`, backend, web, mobile
+- **[README-setup-prod.md](README-setup-prod.md)** — primeira vez no VPS: passo a passo, variáveis de ambiente, migração
+- **[README-diario.md](README-diario.md)** — dia a dia, local e produção: ligar, publicar, logs, base de dados, planos, scripts

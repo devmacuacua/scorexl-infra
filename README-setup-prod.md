@@ -1,6 +1,7 @@
-# scorexl-infra — setup
+# Setup de produção
 
-O que fazes uma vez: preparar o VPS, o `.env` e migrar do droplet antigo.
+Preparar o VPS, uma vez: servidor, `.env` e migração do droplet antigo.
+Local: [README-setup-local.md](README-setup-local.md).
 
 ## Novo droplet — passo a passo
 
