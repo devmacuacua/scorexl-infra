@@ -60,6 +60,19 @@ nano ~/projects/scorexl-infra/.env
 cd ~/projects/scorexl-infra && ./scripts/deploy.sh
 ```
 
+### Mudar a senha da base (mantém os dados)
+
+```bash
+nano ~/projects/scorexl-infra/.env      # BACKEND_POSTGRES_PASSWORD / UMAMI_POSTGRES_PASSWORD
+cd ~/projects/scorexl-infra && ./scripts/apply-db-passwords.sh
+```
+
+### Apagar as bases e recomeçar ⚠️ perde os dados
+
+```bash
+cd ~/projects/scorexl-infra && docker compose down -v && ./scripts/deploy.sh
+```
+
 ### Abrir a base no teu PC
 
 ```bash
