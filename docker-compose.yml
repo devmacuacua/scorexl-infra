@@ -18,7 +18,8 @@ services:
     image: ghcr.io/devmacuacua/scorexl-backend:latest
     restart: always
     ports:
-      - "8080:8080"
+      # loopback only: Docker-published ports bypass ufw; nginx proxies locally
+      - "127.0.0.1:8080:8080"
     dns:
       - 8.8.8.8
       - 8.8.4.4
@@ -51,8 +52,9 @@ services:
     volumes:
       - scorexl_postgres_data:/var/lib/postgresql/data
     ports:
-      # 5432 stays with the old football postgres until it is retired
-      - "5440:5432"
+      # loopback only (Docker-published ports bypass ufw). For analysis, tunnel:
+      #   ssh -L 5440:127.0.0.1:5440 root@<droplet>  ->  localhost:5440
+      - "127.0.0.1:5440:5432"
     networks:
       - scorexl-network
 
@@ -65,12 +67,26 @@ services:
     image: ghcr.io/devmacuacua/scorexl-web:latest
     restart: always
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     env_file:
       - .env
     environment:
-      # server-side calls to the user module; sport URLs in .env are the public
-      # subdomains, which keep working through nginx
+      # server-side calls go straight to the backend over the docker network
+      # (not through the public subdomains: works before DNS points here, and
+      # skips Cloudflare + nginx). NEXT_PUBLIC_* stay public — they're baked
+      # into the browser bundle at build time.
+      SCOREXL_API_URL: http://scorexl-backend:8080/football
+      SCOREXL_BASKETBALL_API_URL: http://scorexl-backend:8080/basketball
+      SCOREXL_NBA_API_URL: http://scorexl-backend:8080/nba
+      SCOREXL_VOLLEYBALL_API_URL: http://scorexl-backend:8080/volleyball
+      SCOREXL_MLB_API_URL: http://scorexl-backend:8080/mlb
+      SCOREXL_AFL_API_URL: http://scorexl-backend:8080/afl
+      SCOREXL_NFL_API_URL: http://scorexl-backend:8080/nfl
+      SCOREXL_NHL_API_URL: http://scorexl-backend:8080/nhl
+      SCOREXL_RUGBY_API_URL: http://scorexl-backend:8080/rugby
+      SCOREXL_HANDBALL_API_URL: http://scorexl-backend:8080/handball
+      SCOREXL_F1_API_URL: http://scorexl-backend:8080/f1
+      SCOREXL_MMA_API_URL: http://scorexl-backend:8080/mma
       SCOREXL_USER_API_URL: http://scorexl-backend:8080/user
     depends_on:
       - scorexl-backend
@@ -88,7 +104,7 @@ services:
     image: ghcr.io/umami-software/umami:postgresql-latest
     restart: always
     ports:
-      - "18000:3000"
+      - "127.0.0.1:18000:3000"
     env_file:
       - .env
     environment:
@@ -110,7 +126,7 @@ services:
     volumes:
       - scorexl_umami_postgres_data:/var/lib/postgresql/data
     ports:
-      - "5445:5432"
+      - "127.0.0.1:5445:5432"
     networks:
       - scorexl-network
 

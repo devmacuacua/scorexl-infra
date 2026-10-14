@@ -12,7 +12,13 @@ set -e
 
 echo "Installing dependencies..."
 sudo apt update
-sudo apt install -y docker.io docker-compose-plugin nginx
+# provision-droplet.sh installs Docker from Docker's own repo (docker-ce); Ubuntu's
+# docker.io conflicts with it, so only install Docker here if it's missing.
+if command -v docker >/dev/null 2>&1; then
+  sudo apt install -y nginx
+else
+  sudo apt install -y docker.io docker-compose-v2 nginx
+fi
 
 echo "Configuring Docker..."
 sudo systemctl enable docker

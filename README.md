@@ -27,33 +27,64 @@ This branch replaces the 13 per-sport `*-api` containers + 13 Postgres
 containers with **one** `scorexl-backend` (repo `scorexl-backend`) and **one**
 `scorexl-postgres` (DB `scorexl`, one schema per module: `football`,
 `basketball`, `nba`, `volleyball`, `mlb`, `afl`, `nfl`, `nhl`, `rugby`,
-`handball`, `f1`, `mma`, `account` for users). Public URLs do not change:
-nginx maps each subdomain to its module prefix
+`handball`, `f1`, `mma`, `account` for users, `platform` for api plans). Public
+URLs do not change: nginx maps each subdomain to its module prefix
 (`basketball-api.scorexl.com/x` -> `127.0.0.1:8080/basketball/x`,
-`api.scorexl.com/x` -> `/football/x`).
+`api.scorexl.com/x` -> `/football/x`). The web talks to the backend over the
+docker network.
 
-Cutover, on the droplet, by hand — steps 2-5 in one sitting: `nginx/*.conf` are
-symlinks into this checkout, so after step 2 any nginx reload (certbot renewal
-included) already points at port 8080, which only has something on it after step 4.
+Every container port is published on **127.0.0.1 only** — Docker's own iptables
+rules bypass ufw, so a `0.0.0.0` binding would expose Postgres to the internet.
+Analysis access to the DB is through an SSH tunnel:
+`ssh -L 5440:127.0.0.1:5440 root@<droplet>` then `localhost:5440`.
 
-1. `scorexl-backend` pushed to `main` -> GHCR image `scorexl-backend:latest` built.
-2. `git fetch && git checkout single-backend` here; add `BACKEND_POSTGRES_PASSWORD`
-   to `.env` (see `.env.example`).
-3. `./scripts/migrate-to-single-backend.sh` — **downtime starts here**: stops the
-   old APIs, dumps every old DB, restores each into its schema, checks exact row
-   counts table by table. Any failure restarts the old APIs automatically.
-4. `./scripts/deploy.sh` — refuses to run unless step 3 succeeded.
-5. `sudo nginx -t && sudo systemctl reload nginx` (`nginx/*.conf` are symlinked by
-   `bootstrap.sh`, so the checkout already updated them).
-6. Check: `curl -s https://basketball-api.scorexl.com/api/v1/market-toggles` etc.
+`scripts/bootstrap.sh` **copies** `nginx/*.conf` into `/etc/nginx/sites-available`
+(it doesn't symlink): nginx only changes when bootstrap is re-run.
 
-Rollback: `git checkout main && ./scripts/deploy.sh && sudo systemctl reload nginx`.
-The old Postgres containers and volumes are never touched by the migration, so the
-old stack comes back with its data as of the moment the old APIs were stopped.
-Delete the old volumes only once you're happy with the new stack.
+### New droplet (chosen path: the old droplet stays untouched as rollback)
 
-Analysis access to production data: `scorexl-postgres` is on host port **5440**
-(5432 stays with the old football DB until that's retired).
+DigitalOcean panel: Ubuntu 24.04, Basic 4 GB / 2 vCPU, same region as the old one,
+SSH key `id_rsa_do`, backups on. Then, from your machine (checkout of this branch):
+
+1. Provision (once):
+   `ssh root@NEW 'bash -s' < scripts/provision-droplet.sh`
+2. Code + secrets:
+   `rsync -a --exclude .env --exclude backups --exclude .git ./ root@NEW:/opt/scorexl-infra/`
+   `scp -3 root@OLD:<old infra dir>/.env root@NEW:/opt/scorexl-infra/.env`
+   then on NEW add `BACKEND_POSTGRES_PASSWORD=<new password>` to `.env`.
+3. Prepare (no downtime yet), on NEW in `/opt/scorexl-infra`:
+   `grep ^GH_PACKAGES_TOKEN= .env | cut -d= -f2- | docker login ghcr.io -u devmacuacua --password-stdin`
+   `docker compose pull && ./scripts/bootstrap.sh`
+4. **Downtime starts** — dump on OLD (from a worktree, so the old checkout and
+   its running stack are not touched):
+   `cd <old infra dir> && git fetch && git worktree add /opt/scorexl-migrate origin/single-backend`
+   `cd /opt/scorexl-migrate && ./scripts/migrate-to-single-backend.sh dump`
+   It stops the old APIs (DBs stay up) and writes `backups/<ts>.tgz` (all 13 DBs
+   + umami, with exact per-table row counts).
+5. Move the dump: `scp -3 root@OLD:/opt/scorexl-migrate/backups/<ts>.tgz root@NEW:/opt/scorexl-infra/backups/`
+6. Restore on NEW (refuses if anything was already restored; verifies every count):
+   `tar -C backups -xzf backups/<ts>.tgz && ./scripts/migrate-to-single-backend.sh restore backups/<ts>`
+7. Start on NEW: `./scripts/deploy.sh`
+8. Smoke test on NEW, before DNS:
+   `curl -s -H 'Host: basketball-api.scorexl.com' http://127.0.0.1/api/v1/plan`
+   `curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: scorexl.com' http://127.0.0.1/`
+   `docker logs --tail=100 scorexl-backend`
+9. Cloudflare: point the A records (`scorexl.com`, `www`, `api`, every `*-api`,
+   `analytics`) at NEW's IP. Proxied records switch immediately — **downtime ends**.
+10. Every sport starts on the FREE api plan. If the api-sports account is still Pro,
+    switch the sports you want: `PUT https://<sport>-api.scorexl.com/api/v1/plan`
+    (`Authorization: Bearer $INTERNAL_API_KEY`, body `{"plan":"PAID"}`).
+
+Rollback (any time before the old droplet is destroyed): Cloudflare A records back to
+OLD, and on OLD `docker start` the API containers the dump stopped (it prints the
+list). Destroy the old droplet only after a few calm days.
+
+### Same droplet (alternative)
+
+`git checkout single-backend`, add `BACKEND_POSTGRES_PASSWORD` to `.env`, then
+`./scripts/migrate-to-single-backend.sh` (mode `all`: dump + restore + verify here),
+`./scripts/deploy.sh`, `./scripts/bootstrap.sh`. Rollback:
+`git checkout main && rm .single-backend-migrated && ./scripts/deploy.sh && ./scripts/bootstrap.sh`.
 
 ## Why one repo
 
