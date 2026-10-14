@@ -43,14 +43,34 @@ Analysis access to the DB is through an SSH tunnel:
 
 ### New droplet (chosen path: the old droplet stays untouched as rollback)
 
-DigitalOcean panel: Ubuntu 24.04, Basic 4 GB / 2 vCPU, same region as the old one,
-SSH key `id_rsa_do`, backups on. Then, from your machine (checkout of this branch):
+| | IP | Role |
+|---|---|---|
+| OLD | `188.166.116.252` | current production (13 APIs + 13 DBs), rollback target |
+| NEW | `209.38.194.84` | single-backend stack, created 2026-10-14 |
 
-1. Provision (once):
-   `ssh root@NEW 'bash -s' < scripts/provision-droplet.sh`
+Status (2026-10-14):
+
+- [x] NEW created (Ubuntu 24.04.5), SSH key `id_rsa_do`
+- [x] 1. provisioned — Docker 29.9 + compose 5.6, nginx 1.24, ufw (22, 80), fail2ban,
+      unattended upgrades, 2 GB swap, Docker logs capped at 5 x 20 MB
+- [x] 2a. repo copied to `/opt/scorexl-infra` (branch `single-backend`, no `.env`)
+- [ ] **resize NEW to 4 GB / 2 vCPU** — it was created as 512 MB / 1 vCPU / 10 GB disk,
+      which can't run the stack (backend heap alone is 1 GB). Panel: Power off ->
+      Resize -> 4 GB / 2 vCPU ("CPU and RAM + disk"; the disk resize is permanent)
+      -> Power on. Everything installed so far survives the resize.
+- [ ] 2b. `.env` from OLD (+ `BACKEND_POSTGRES_PASSWORD`)
+- [ ] 3. GHCR login, `docker compose pull`, `bootstrap.sh`
+- [ ] 4-9. cutover (downtime window)
+- [ ] 10. api plans
+
+From your machine (checkout of this branch). OLD's port 22 is IP-allowlisted, so the
+OLD steps run from a machine that's allowed in:
+
+1. Provision (once, idempotent):
+   `ssh root@209.38.194.84 'bash -s' < scripts/provision-droplet.sh`
 2. Code + secrets:
-   `rsync -a --exclude .env --exclude backups --exclude .git ./ root@NEW:/opt/scorexl-infra/`
-   `scp -3 root@OLD:<old infra dir>/.env root@NEW:/opt/scorexl-infra/.env`
+   `rsync -a --exclude .env --exclude backups --exclude .git ./ root@209.38.194.84:/opt/scorexl-infra/`
+   `scp -3 root@188.166.116.252:<old infra dir>/.env root@209.38.194.84:/opt/scorexl-infra/.env`
    then on NEW add `BACKEND_POSTGRES_PASSWORD=<new password>` to `.env`.
 3. Prepare (no downtime yet), on NEW in `/opt/scorexl-infra`:
    `grep ^GH_PACKAGES_TOKEN= .env | cut -d= -f2- | docker login ghcr.io -u devmacuacua --password-stdin`
@@ -61,7 +81,8 @@ SSH key `id_rsa_do`, backups on. Then, from your machine (checkout of this branc
    `cd /opt/scorexl-migrate && ./scripts/migrate-to-single-backend.sh dump`
    It stops the old APIs (DBs stay up) and writes `backups/<ts>.tgz` (all 13 DBs
    + umami, with exact per-table row counts).
-5. Move the dump: `scp -3 root@OLD:/opt/scorexl-migrate/backups/<ts>.tgz root@NEW:/opt/scorexl-infra/backups/`
+5. Move the dump:
+   `scp -3 root@188.166.116.252:/opt/scorexl-migrate/backups/<ts>.tgz root@209.38.194.84:/opt/scorexl-infra/backups/`
 6. Restore on NEW (refuses if anything was already restored; verifies every count):
    `tar -C backups -xzf backups/<ts>.tgz && ./scripts/migrate-to-single-backend.sh restore backups/<ts>`
 7. Start on NEW: `./scripts/deploy.sh`
@@ -70,14 +91,18 @@ SSH key `id_rsa_do`, backups on. Then, from your machine (checkout of this branc
    `curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: scorexl.com' http://127.0.0.1/`
    `docker logs --tail=100 scorexl-backend`
 9. Cloudflare: point the A records (`scorexl.com`, `www`, `api`, every `*-api`,
-   `analytics`) at NEW's IP. Proxied records switch immediately — **downtime ends**.
+   `analytics`) from `188.166.116.252` to `209.38.194.84`. Proxied records switch
+   immediately — **downtime ends**.
 10. Every sport starts on the FREE api plan. If the api-sports account is still Pro,
     switch the sports you want: `PUT https://<sport>-api.scorexl.com/api/v1/plan`
     (`Authorization: Bearer $INTERNAL_API_KEY`, body `{"plan":"PAID"}`).
 
-Rollback (any time before the old droplet is destroyed): Cloudflare A records back to
-OLD, and on OLD `docker start` the API containers the dump stopped (it prints the
-list). Destroy the old droplet only after a few calm days.
+DB access for analysis on NEW (ports are loopback-only):
+`ssh -i ~/.ssh/id_rsa_do -L 5440:127.0.0.1:5440 root@209.38.194.84`, then `localhost:5440`.
+
+Rollback (any time before OLD is destroyed): Cloudflare A records back to
+`188.166.116.252`, and on OLD `docker start` the API containers the dump stopped (it
+prints the list). Destroy OLD only after a few calm days.
 
 ### Same droplet (alternative)
 
