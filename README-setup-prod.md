@@ -5,7 +5,7 @@ Local: [README-setup-local.md](README-setup-local.md).
 
 ## Novo droplet — passo a passo
 
-Estado: passos 1 e 2 feitos (2026-10-14). Próximo: **3**.
+Estado (2026-10-14): passos 1, 2, 4 e 5 feitos; 3 a meio (está com 2 GB / 1 vCPU). Próximo: **3**, depois **6** e **7**.
 
 ### 1. Criar o droplet ✅
 
@@ -22,13 +22,13 @@ rsync -a --exclude .env --exclude backups --exclude .git -e "ssh -i ~/.ssh/id_rs
 
 Instala Docker, nginx, ufw (22 e 80), fail2ban, atualizações automáticas, swap de 2 GB e limita os logs do Docker.
 
-### 3. Redimensionar para 4 GB
+### 3. Redimensionar para 4 GB ⚠️ a meio
 
-O droplet foi criado com 512 MB — não chega para o stack.
+Criado com 512 MB, já passou para **2 GB / 1 vCPU / 48 GB** — ainda curto: o backend sozinho usa até ~1,4 GB.
 
 No painel: **Power off → Resize → 4 GB / 2 vCPU ("CPU and RAM + disk") → Power on**. Nada do que foi instalado se perde.
 
-### 4. Utilizador `fmacuacua` e fuso horário
+### 4. Utilizador `fmacuacua` e fuso horário ✅
 
 ```bash
 ssh -i ~/.ssh/id_rsa_do root@209.38.194.84
@@ -46,7 +46,7 @@ Não fechas esta sessão ainda. Noutro terminal, confirma que entras com o novo 
 ssh -i ~/.ssh/id_rsa_do fmacuacua@209.38.194.84
 ```
 
-### 5. Endurecer o SSH
+### 5. Endurecer o SSH ✅
 
 ```bash
 sudo nano /etc/ssh/sshd_config
