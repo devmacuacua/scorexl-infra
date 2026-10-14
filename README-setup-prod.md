@@ -16,7 +16,7 @@ rsync -a --chown=fmacuacua:fmacuacua ~/.ssh /home/fmacuacua
 sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/; s/^#\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config && systemctl restart ssh
 ```
 
-## 3. Chave do GitHub
+## 3. Chave do GitHub ✅
 
 ```bash
 ssh scorexl
@@ -25,7 +25,7 @@ ssh-keygen -t ed25519 -N '' -f ~/.ssh/id_ed25519 && cat ~/.ssh/id_ed25519.pub
 
 GitHub → `scorexl-infra` → Settings → Deploy keys → Add (só leitura).
 
-## 4. Clonar e provisionar
+## 4. Clonar e provisionar ✅
 
 ```bash
 mkdir -p ~/projects && cd ~/projects
@@ -36,13 +36,13 @@ sudo ./scripts/provision-droplet.sh && sudo usermod -aG docker fmacuacua
 
 Sai e volta a entrar (grupo `docker`).
 
-## 5. `.env`
+## 5. `.env` ✅
 
 ```bash
 cd ~/projects/scorexl-infra && cp .env.example .env && nano .env
 ```
 
-## 6. Arrancar
+## 6. Arrancar ✅ (2026-10-14)
 
 ```bash
 cd ~/projects/scorexl-infra && ./scripts/deploy.sh
