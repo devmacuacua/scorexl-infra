@@ -1,2 +1,4 @@
 .env
 .single-backend-migrated
+.env.bak*
+*.swp
