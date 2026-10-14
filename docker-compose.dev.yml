@@ -7,40 +7,10 @@
 # Regenerate if new services are added to docker-compose.yml:
 #   ./scripts/dev.sh regen
 services:
-  scorexl-football-api:
+  scorexl-backend:
     build:
-      context: ../scorexl-football-api
-    image: !reset null
-  scorexl-basketball-api:
-    build:
-      context: ../scorexl-basketball-api
-    image: !reset null
-  scorexl-nba-api:
-    build:
-      context: ../scorexl-nba-api
-    image: !reset null
-  scorexl-volleyball-api:
-    build:
-      context: ../scorexl-volleyball-api
-    image: !reset null
-  scorexl-mlb-api:
-    build:
-      context: ../scorexl-mlb-api
-    image: !reset null
-  scorexl-user-api:
-    build:
-      context: ../scorexl-user-api
+      context: ../scorexl-backend
     image: !reset null
 volumes:
-  scorexl_football_postgres_data:
-    external: false
-  scorexl_basketball_postgres_data:
-    external: false
-  scorexl_nba_postgres_data:
-    external: false
-  scorexl_mlb_postgres_data:
-    external: false
-  scorexl_afl_postgres_data:
-    external: false
-  scorexl_user_postgres_data:
+  scorexl_postgres_data:
     external: false

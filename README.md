@@ -21,6 +21,40 @@ out by a human. This repo does not delete or modify them. **As of
 2026-07-23 this repo is the single build source going forward — the six
 legacy repos are deprecated and no longer actively updated.**
 
+## Single backend cutover (branch `single-backend`, 2026-10-14)
+
+This branch replaces the 13 per-sport `*-api` containers + 13 Postgres
+containers with **one** `scorexl-backend` (repo `scorexl-backend`) and **one**
+`scorexl-postgres` (DB `scorexl`, one schema per module: `football`,
+`basketball`, `nba`, `volleyball`, `mlb`, `afl`, `nfl`, `nhl`, `rugby`,
+`handball`, `f1`, `mma`, `account` for users). Public URLs do not change:
+nginx maps each subdomain to its module prefix
+(`basketball-api.scorexl.com/x` -> `127.0.0.1:8080/basketball/x`,
+`api.scorexl.com/x` -> `/football/x`).
+
+Cutover, on the droplet, by hand — steps 2-5 in one sitting: `nginx/*.conf` are
+symlinks into this checkout, so after step 2 any nginx reload (certbot renewal
+included) already points at port 8080, which only has something on it after step 4.
+
+1. `scorexl-backend` pushed to `main` -> GHCR image `scorexl-backend:latest` built.
+2. `git fetch && git checkout single-backend` here; add `BACKEND_POSTGRES_PASSWORD`
+   to `.env` (see `.env.example`).
+3. `./scripts/migrate-to-single-backend.sh` — **downtime starts here**: stops the
+   old APIs, dumps every old DB, restores each into its schema, checks exact row
+   counts table by table. Any failure restarts the old APIs automatically.
+4. `./scripts/deploy.sh` — refuses to run unless step 3 succeeded.
+5. `sudo nginx -t && sudo systemctl reload nginx` (`nginx/*.conf` are symlinked by
+   `bootstrap.sh`, so the checkout already updated them).
+6. Check: `curl -s https://basketball-api.scorexl.com/api/v1/market-toggles` etc.
+
+Rollback: `git checkout main && ./scripts/deploy.sh && sudo systemctl reload nginx`.
+The old Postgres containers and volumes are never touched by the migration, so the
+old stack comes back with its data as of the moment the old APIs were stopped.
+Delete the old volumes only once you're happy with the new stack.
+
+Analysis access to production data: `scorexl-postgres` is on host port **5440**
+(5432 stays with the old football DB until that's retired).
+
 ## Why one repo
 
 The legacy repos each ran their own isolated Docker network, their own
