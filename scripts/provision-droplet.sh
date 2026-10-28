@@ -4,7 +4,7 @@ set -euo pipefail
 # One-time setup of a fresh DigitalOcean droplet (Ubuntu 24.04, 4 GB) for the
 # single-backend stack. Runs as root (via sudo), from your machine:
 #
-#   cd ~/projects/scorexl-infra && sudo ./scripts/provision-droplet.sh
+#   cd ~/projects/scorexl-infra && sudo bash scripts/provision-droplet.sh
 #
 # Idempotent: safe to run again. Installs Docker (Docker's own apt repo), nginx,
 # ufw (22 + 80 only), fail2ban, unattended security upgrades, Docker log rotation

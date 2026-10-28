@@ -4,7 +4,7 @@
 
 | IP | Utilizador | Projeto |
 |---|---|---|
-| `209.38.194.84` | `fmacuacua` (root bloqueado) | `/home/fmacuacua/projects/scorexl-infra` |
+| `159.89.3.248` | `fmacuacua` (root bloqueado) | `/home/fmacuacua/projects/scorexl-infra` |
 
 O droplet antigo (`188.166.116.252`) foi destruído: a instalação começou do zero, sem migração de dados.
 Os jogos e as odds voltam a encher-se pelos jobs agendados do backend; o histórico de picks, utilizadores
