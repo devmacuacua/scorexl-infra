@@ -81,9 +81,8 @@ ssh -N -L 5440:127.0.0.1:5440 scorexl
 
 Liga a `localhost:5440`, base `scorexl`.
 
-### Mudar o plano de um desporto
+### Ver a cota de um desporto
 
 ```bash
-curl https://mlb-api.scorexl.com/api/v1/plan
-curl -X PUT https://mlb-api.scorexl.com/api/v1/plan -H "Authorization: Bearer $INTERNAL_API_KEY" -H "Content-Type: application/json" -d '{"plan":"PAID"}'
+curl https://mlb-api.scorexl.com/api/v1/quota
 ```

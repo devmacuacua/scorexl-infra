@@ -50,7 +50,7 @@ export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5440/scorexl SPRING_DAT
 ## 5. Confirmar o backend
 
 ```bash
-curl -s http://localhost:8080/mlb/api/v1/plan
+curl -s http://localhost:8080/mlb/api/v1/quota
 ```
 
 ## 6. Web

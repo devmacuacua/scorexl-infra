@@ -75,10 +75,9 @@ Tudo num só `.env` em `~/projects/scorexl-infra` no servidor (no local: `scorex
 
 As `<DESPORTO>_POSTGRES_*` e `USER_POSTGRES_PASSWORD` são do stack antigo e já não são usadas.
 
-## Plano da API-Sports
+## Cota da API-Sports
 
-Cada desporto está em FREE (padrão, 100 chamadas/dia, sem explorer) ou PAID. Detalhes no
-`README-doc.md` do `scorexl-backend`.
+Detalhes no `README-doc.md` do `scorexl-backend`.
 
 ## Scripts
 
