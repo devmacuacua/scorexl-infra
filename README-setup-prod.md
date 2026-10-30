@@ -94,7 +94,7 @@ Se o `deploy.sh` der `docker: command not found`, este passo não correu.
 cd ~/projects/scorexl-infra && cp .env.example .env && nano .env
 ```
 
-## 6. Arrancar ✅ (2026-10-14)
+## 6. Arrancar ✅ (2026-10-28)
 
 ```bash
 cd ~/projects/scorexl-infra && ./scripts/deploy.sh
@@ -103,6 +103,40 @@ cd ~/projects/scorexl-infra && ./scripts/deploy.sh
 ## 7. DNS
 
 Cloudflare: `@`, `www`, `api`, `analytics` e todos os `*-api` → A `159.89.3.248` (proxy ligado).
+
+## 8. Carregar histórico (base nova)
+
+A base nova só tem os próximos jogos (o full sync corre de 2 em 2 h e traz hoje + 2 dias). Sem jogos passados e estatísticas, não há stats nem picks (`picksGenerated=0`).
+
+```bash
+cd ~/projects/scorexl-infra
+K=$(grep -E '^INTERNAL_API_KEY=' .env | cut -d= -f2-)
+API=https://api.scorexl.com/api/v1/sync
+```
+
+Por ordem, cada um só depois do anterior estar `SUCCESS` em `curl -s $API/status`:
+
+```bash
+# 1. resultados passados (~1 pedido por dia)
+curl -s -X POST -H "Authorization: Bearer $K" "$API/history?daysBack=60"
+
+# 2. estatísticas (cantos, cartões, remates, faltas) dos jogos passados
+curl -s -X POST -H "Authorization: Bearer $K" "$API/statistics/backfill?days=30"
+
+# 3. gerar picks (não gasta quota)
+curl -s -X POST -H "Authorization: Bearer $K" "$API/pipeline?days=2"
+```
+
+O backfill só trata jogos que já estão na base (por isso o `history` primeiro) e gasta **1 pedido por jogo**, com 3 s entre pedidos. Corre em background: `docker logs -f scorexl-backend | grep -i backfill`.
+
+Quota do football: 7500/dia, reinicia às 00:00 UTC. Ver antes de correr o backfill:
+
+```bash
+A=$(grep -E '^API_SPORTS_KEY=' .env | cut -d= -f2-)
+curl -s -H "x-apisports-key: $A" https://v3.football.api-sports.io/status | grep -o '"requests":{[^}]*}'
+```
+
+Se faltar quota, faz `days=30` num dia e `days=60` no seguinte (os já preenchidos são saltados).
 
 ## Atalho SSH (no teu PC)
 
