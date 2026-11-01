@@ -50,7 +50,7 @@ export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5440/scorexl SPRING_DAT
 ## 5. Confirmar o backend
 
 ```bash
-curl -s http://localhost:8080/nba/api/v1/quota
+curl -s http://localhost:8080/basketball/api/v1/quota
 ```
 
 ## 6. Web
@@ -61,7 +61,6 @@ pnpm install
 cat > .env.local <<'X'
 SCOREXL_API_URL=http://localhost:8080/football
 SCOREXL_BASKETBALL_API_URL=http://localhost:8080/basketball
-SCOREXL_NBA_API_URL=http://localhost:8080/nba
 SCOREXL_USER_API_URL=http://localhost:8080/user
 NEXT_PUBLIC_BACKEND_URL=http://localhost:8080/football
 INTERNAL_API_KEY=dev
@@ -79,7 +78,6 @@ npm install
 cat > .env <<'X'
 EXPO_PUBLIC_FOOTBALL_API_URL=http://192.168.1.10:8080/football
 EXPO_PUBLIC_BASKETBALL_API_URL=http://192.168.1.10:8080/basketball
-EXPO_PUBLIC_NBA_API_URL=http://192.168.1.10:8080/nba
 X
 npm run start
 ```
