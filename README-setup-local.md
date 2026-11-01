@@ -50,7 +50,7 @@ export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5440/scorexl SPRING_DAT
 ## 5. Confirmar o backend
 
 ```bash
-curl -s http://localhost:8080/mlb/api/v1/quota
+curl -s http://localhost:8080/nba/api/v1/quota
 ```
 
 ## 6. Web
@@ -62,14 +62,6 @@ cat > .env.local <<'X'
 SCOREXL_API_URL=http://localhost:8080/football
 SCOREXL_BASKETBALL_API_URL=http://localhost:8080/basketball
 SCOREXL_NBA_API_URL=http://localhost:8080/nba
-SCOREXL_VOLLEYBALL_API_URL=http://localhost:8080/volleyball
-SCOREXL_MLB_API_URL=http://localhost:8080/mlb
-SCOREXL_AFL_API_URL=http://localhost:8080/afl
-SCOREXL_NFL_API_URL=http://localhost:8080/nfl
-SCOREXL_NHL_API_URL=http://localhost:8080/nhl
-SCOREXL_RUGBY_API_URL=http://localhost:8080/rugby
-SCOREXL_HANDBALL_API_URL=http://localhost:8080/handball
-SCOREXL_MMA_API_URL=http://localhost:8080/mma
 SCOREXL_USER_API_URL=http://localhost:8080/user
 NEXT_PUBLIC_BACKEND_URL=http://localhost:8080/football
 INTERNAL_API_KEY=dev

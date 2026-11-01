@@ -84,5 +84,5 @@ Liga a `localhost:5440`, base `scorexl`.
 ### Ver a cota de um desporto
 
 ```bash
-curl https://mlb-api.scorexl.com/api/v1/quota
+curl https://nba-api.scorexl.com/api/v1/quota
 ```

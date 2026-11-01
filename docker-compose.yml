@@ -74,15 +74,6 @@ services:
       SCOREXL_API_URL: http://scorexl-backend:8080/football
       SCOREXL_BASKETBALL_API_URL: http://scorexl-backend:8080/basketball
       SCOREXL_NBA_API_URL: http://scorexl-backend:8080/nba
-      SCOREXL_VOLLEYBALL_API_URL: http://scorexl-backend:8080/volleyball
-      SCOREXL_MLB_API_URL: http://scorexl-backend:8080/mlb
-      SCOREXL_AFL_API_URL: http://scorexl-backend:8080/afl
-      SCOREXL_NFL_API_URL: http://scorexl-backend:8080/nfl
-      SCOREXL_NHL_API_URL: http://scorexl-backend:8080/nhl
-      SCOREXL_RUGBY_API_URL: http://scorexl-backend:8080/rugby
-      SCOREXL_HANDBALL_API_URL: http://scorexl-backend:8080/handball
-      SCOREXL_F1_API_URL: http://scorexl-backend:8080/f1
-      SCOREXL_MMA_API_URL: http://scorexl-backend:8080/mma
       SCOREXL_USER_API_URL: http://scorexl-backend:8080/user
     depends_on:
       - scorexl-backend
