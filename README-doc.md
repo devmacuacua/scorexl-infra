@@ -6,16 +6,15 @@
 |---|---|---|
 | `159.89.3.248` | `fmacuacua` (root bloqueado) | `/home/fmacuacua/projects/scorexl-infra` |
 
-O droplet antigo (`188.166.116.252`) foi destruído: a instalação começou do zero, sem migração de dados.
-Os jogos e as odds voltam a encher-se pelos jobs agendados do backend; o histórico de picks, utilizadores
-e assinaturas antigos perdeu-se.
+Os palpites vêm do feed [scorexl-picks](https://github.com/devmacuacua/scorexl-picks); o backend
+copia-os para a base, liquida-os e envia as push. Já não há motores nem chamadas à API-Sports.
 
 ## Stack
 
 | Container | Porta | |
 |---|---|---|
-| `scorexl-backend` | 127.0.0.1:8080 | todos os desportos + utilizadores |
-| `scorexl-postgres` | 127.0.0.1:5440 | base `scorexl`, um schema por desporto + `account` + `platform` |
+| `scorexl-backend` | 127.0.0.1:8080 | picks (feed), utilizadores, push, histórico do basquetebol |
+| `scorexl-postgres` | 127.0.0.1:5440 | base `scorexl`, um schema por módulo (`picks`, `account`, `basketball`) |
 | `scorexl-web` | 127.0.0.1:3000 | site |
 | `scorexl-umami` / `scorexl-umami-postgres` | 127.0.0.1:18000 / 5445 | analytics |
 
@@ -24,8 +23,9 @@ Domínios (nginx na porta 80, atrás do Cloudflare):
 | Domínio | Vai para |
 |---|---|
 | `scorexl.com`, `www` | web |
-| `api.scorexl.com` | backend `/football` |
-| `<desporto>-api.scorexl.com` | backend `/<desporto>` |
+| `api.scorexl.com/picks/…` | backend `/picks` (só GET) — site e app |
+| `api.scorexl.com/user/…` | backend `/user` — conta e push; o backend exige token |
+| `basketball-api.scorexl.com` | backend `/basketball` (histórico) |
 | `analytics.scorexl.com` | umami |
 
 **Porque 127.0.0.1:** o Docker escreve as próprias regras de iptables e ignora o ufw. Uma porta em
@@ -49,8 +49,9 @@ Tudo num só `.env` em `~/projects/scorexl-infra` no servidor (no local: `scorex
 |---|---|
 | `POSTGRES_USER` | utilizador do Postgres (backend e umami) |
 | `BACKEND_POSTGRES_PASSWORD` | senha do `scorexl-postgres` |
-| `API_SPORTS_KEY` | chave da API-Sports de todos os desportos (`MLB_API_SPORTS_KEY` etc. sobrepõe um só) |
-| `INTERNAL_API_KEY` | protege as rotas 🔒 (sync manual, plano, admin) — partilhada com o web |
+| `INTERNAL_API_KEY` | chave do servidor do site para o módulo `user` do backend — partilhada com o web |
+| `GOOGLE_CLIENT_IDS` | client IDs OAuth aceites nos tokens Google da app (web, Android, iOS) |
+| `EXPO_ACCESS_TOKEN` | opcional, push para telemóveis com "enhanced push security" |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_EMAIL` | push notifications |
 | `CORS_ALLOWED_ORIGINS` | origens permitidas no módulo `user` |
 | `BACKEND_JAVA_TOOL_OPTIONS` | opcional, padrão `-Xmx1g -XX:MaxMetaspaceSize=384m -Xss512k` |
@@ -59,8 +60,8 @@ Tudo num só `.env` em `~/projects/scorexl-infra` no servidor (no local: `scorex
 
 | Variável | Para quê |
 |---|---|
-| `SCOREXL_*_API_URL` | não precisas de definir: o compose já aponta para `http://scorexl-backend:8080/<módulo>` |
-| `NEXT_PUBLIC_BACKEND_URL`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | entram no build da imagem (GitHub Actions), não aqui |
+| `SCOREXL_PICKS_API_URL`, `SCOREXL_USER_API_URL` | não precisas de definir: o compose já aponta para `http://scorexl-backend:8080/<módulo>` |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `NEXT_PUBLIC_ADSENSE_*` | entram no build da imagem (GitHub Actions), não aqui |
 | `AUTH_URL`, `AUTH_TRUST_HOST`, `AUTH_SECRET` | sessão (Auth.js) |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | login Google |
 | `CRON_SECRET` | rotas de cron |
@@ -75,10 +76,6 @@ Tudo num só `.env` em `~/projects/scorexl-infra` no servidor (no local: `scorex
 
 As `<DESPORTO>_POSTGRES_*` e `USER_POSTGRES_PASSWORD` são do stack antigo e já não são usadas.
 
-## Cota da API-Sports
-
-Detalhes no `README-doc.md` do `scorexl-backend`.
-
 ## Scripts
 
 | Script | Faz |
@@ -91,7 +88,7 @@ Detalhes no `README-doc.md` do `scorexl-backend`.
 
 ## Notas do setup local
 
-- `API_SPORTS_KEY` vazia no local: com a chave real, os jobs gastam a cota de produção (a conta é a mesma).
+- Web local precisa de Node 22 (o Tailwind 4.3 falha no Node 20).
 - Modo 4A (Docker) — o backend só escuta em 127.0.0.1; o telemóvel não chega lá. Para o mobile, usa o modo 4B.
-- O módulo `user` não tem endereço público: sem backend local, login e favoritos não funcionam.
+- Sem backend local, login, conta e push não funcionam.
 - Mobile: usa o IP do PC na rede, não `localhost`.

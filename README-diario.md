@@ -81,8 +81,9 @@ ssh -N -L 5440:127.0.0.1:5440 scorexl
 
 Liga a `localhost:5440`, base `scorexl`.
 
-### Ver a cota de um desporto
+### Ver os palpites que o backend importou
 
 ```bash
-curl https://basketball-api.scorexl.com/api/v1/quota
+curl -s https://api.scorexl.com/picks/api/v1/summary
+docker logs scorexl-backend 2>&1 | grep -E "\[feed\]|\[picks-push\]|\[expo\]" | tail -20
 ```

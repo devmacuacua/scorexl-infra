@@ -1,12 +1,11 @@
 services:
   # ════════════════════════════════════════════════════════════════════════
-  # BACKEND — every sport + users in one Spring Boot app (scorexl-backend),
-  # one Postgres with one schema per module. Replaces the 13 per-sport
-  # *-api containers and their 13 postgres containers (2026-10-14).
+  # BACKEND — scorexl-backend: picks (imported from the scorexl-picks feed),
+  # users, push and the basketball history, one Postgres with one schema per
+  # module. No pick engines or API-Sports syncs anymore (2026-11-04).
   #
-  # Public subdomains (api., basketball-api., ...) still work: nginx rewrites
-  # each one to its module prefix, e.g. basketball-api.scorexl.com/x ->
-  # 127.0.0.1:8080/basketball/x. See nginx/*.conf.
+  # Public: api.scorexl.com/picks/... and /user/..., basketball-api.scorexl.com
+  # -> /basketball. See nginx/*.conf.
   # ════════════════════════════════════════════════════════════════════════
 
   scorexl-backend:
@@ -31,7 +30,6 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: "false"
       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
-      API_SPORTS_KEY: ${API_SPORTS_KEY}
     depends_on:
       - scorexl-postgres
     networks:
@@ -71,8 +69,7 @@ services:
       # (not through the public subdomains: works before DNS points here, and
       # skips Cloudflare + nginx). NEXT_PUBLIC_* stay public — they're baked
       # into the browser bundle at build time.
-      SCOREXL_API_URL: http://scorexl-backend:8080/football
-      SCOREXL_BASKETBALL_API_URL: http://scorexl-backend:8080/basketball
+      SCOREXL_PICKS_API_URL: http://scorexl-backend:8080/picks
       SCOREXL_USER_API_URL: http://scorexl-backend:8080/user
     depends_on:
       - scorexl-backend
