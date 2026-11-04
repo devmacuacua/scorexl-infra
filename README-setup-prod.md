@@ -90,12 +90,20 @@ Se o `deploy.sh` der `docker: command not found`, este passo não correu.
 
 ## 5. `.env`
 
+O `.env.prod` do teu PC já é o `.env` de produção completo (mesma estrutura do `.env.example`). No teu PC:
+
 ```bash
-cd ~/projects/scorexl-infra && cp .env.example .env && nano .env
+cd ~/workspace-scorexl/scorexl-infra
+scp .env.prod fmacuacua@188.166.60.166:~/projects/scorexl-infra/.env
+ssh fmacuacua@188.166.60.166 'chmod 600 ~/projects/scorexl-infra/.env'
 ```
 
-Usa as **mesmas** `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` de antes (cópia em `.env.prod` no teu PC):
-os browsers que já tinham alertas voltam a registar-se sozinhos. Com chaves novas, perdem os alertas.
+Traz as **mesmas** `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` de antes: os browsers que já tinham alertas
+voltam a registar-se sozinhos. Com chaves novas, perdem os alertas.
+
+Sem o `.env.prod`: `cp .env.example .env && nano .env` no servidor e preenche os `<...>`.
+
+Se mudares o `.env` no servidor, copia-o de volta para o `.env.prod` (`scp` ao contrário), para os dois não divergirem.
 
 ## 6. Arrancar
 
