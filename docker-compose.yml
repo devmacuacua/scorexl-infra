@@ -22,8 +22,8 @@ services:
       - .env
     environment:
       SERVER_PORT: 8080
-      # football had 512m, every other API 256m (3.5g total across 13 JVMs)
-      JAVA_TOOL_OPTIONS: ${BACKEND_JAVA_TOOL_OPTIONS:--Xmx1g -XX:MaxMetaspaceSize=384m -Xss512k}
+      # no pick engines or syncs any more: ~450 MB in use measured with a 1g cap
+      JAVA_TOOL_OPTIONS: ${BACKEND_JAVA_TOOL_OPTIONS:--Xmx512m -XX:MaxMetaspaceSize=256m -Xss512k}
       SPRING_DATASOURCE_URL: jdbc:postgresql://scorexl-postgres:5432/scorexl
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${BACKEND_POSTGRES_PASSWORD}

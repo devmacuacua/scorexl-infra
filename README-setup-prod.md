@@ -4,7 +4,7 @@ Servidor `159.89.3.248` · utilizador `fmacuacua` · projeto em `~/projects/scor
 
 ## 1. Droplet ✅
 
-Painel: Ubuntu 24.04 · 4 GB / 2 vCPU · chave `id_rsa_do` · backups ligados.
+Painel: Ubuntu 24.04 · 2 GB · região Amsterdam ou Londres (Frankfurt se houver) · chave `id_rsa_do` · backups ligados.
 Networking → Firewalls: portas 22 e 80.
 
 ## 2. Utilizador ✅

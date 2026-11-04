@@ -54,7 +54,7 @@ Tudo num só `.env` em `~/projects/scorexl-infra` no servidor (no local: `scorex
 | `EXPO_ACCESS_TOKEN` | opcional, push para telemóveis com "enhanced push security" |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_EMAIL` | push notifications |
 | `CORS_ALLOWED_ORIGINS` | origens permitidas no módulo `user` |
-| `BACKEND_JAVA_TOOL_OPTIONS` | opcional, padrão `-Xmx1g -XX:MaxMetaspaceSize=384m -Xss512k` |
+| `BACKEND_JAVA_TOOL_OPTIONS` | opcional, padrão `-Xmx512m -XX:MaxMetaspaceSize=256m -Xss512k` |
 
 **Web**
 
