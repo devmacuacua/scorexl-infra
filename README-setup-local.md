@@ -7,7 +7,7 @@ Requisitos: Docker, Node 22 + pnpm, Java 21 (só para o modo B).
 ```bash
 mkdir -p ~/projects && cd ~/projects
 git clone git@github.com:devmacuacua/scorexl-infra.git
-cd scorexl-infra && git checkout single-backend
+cd scorexl-infra && git checkout main
 ```
 
 ## 2. Clonar o resto (ao lado do infra)
