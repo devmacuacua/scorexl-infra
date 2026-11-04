@@ -4,7 +4,7 @@ Servidor `159.89.3.248` · utilizador `fmacuacua` · projeto em `~/projects/scor
 
 ## 1. Droplet ✅
 
-Painel: Ubuntu 24.04 · 4 GB / 2 vCPU · chave `id_rsa_do` · backups ligados.
+Painel: Ubuntu 24.04 · 2 GB · região Amsterdam ou Londres (Frankfurt se houver) · chave `id_rsa_do` · backups ligados.
 Networking → Firewalls: portas 22 e 80.
 
 ## 2. Utilizador ✅
@@ -102,41 +102,43 @@ cd ~/projects/scorexl-infra && ./scripts/deploy.sh
 
 ## 7. DNS
 
-Cloudflare: `@`, `www`, `api`, `analytics` e todos os `*-api` → A `159.89.3.248` (proxy ligado).
+Cloudflare: `@`, `www`, `api`, `analytics` e `basketball-api` → A `159.89.3.248` (proxy ligado).
 
-## 8. Carregar histórico (base nova)
+## 8. Mudar para o feed de picks (uma vez)
 
-A base nova só tem os próximos jogos (o full sync corre de 2 em 2 h e traz hoje + 2 dias). Sem jogos passados e estatísticas, não há stats nem picks (`picksGenerated=0`).
-
-```bash
-cd ~/projects/scorexl-infra
-K=$(grep -E '^INTERNAL_API_KEY=' .env | cut -d= -f2-)
-API=https://api.scorexl.com/api/v1/sync
-```
-
-Por ordem, cada um só depois do anterior estar `SUCCESS` em `curl -s $API/status`:
+Antes: as branches `feature/scorexl-picks-feed` do `scorexl-backend` e do `scorexl-web` juntas no `main`
+e as imagens novas geradas (GitHub → Actions, ambos verdes).
 
 ```bash
-# 1. resultados passados (~1 pedido por dia)
-curl -s -X POST -H "Authorization: Bearer $K" "$API/history?daysBack=60"
-
-# 2. estatísticas (cantos, cartões, remates, faltas) dos jogos passados
-curl -s -X POST -H "Authorization: Bearer $K" "$API/statistics/backfill?days=30"
-
-# 3. gerar picks (não gasta quota)
-curl -s -X POST -H "Authorization: Bearer $K" "$API/pipeline?days=2"
+ssh scorexl
+cd ~/projects/scorexl-infra && git fetch && git checkout feature/scorexl-picks-feed && git pull
+nano .env
 ```
 
-O backfill só trata jogos que já estão na base (por isso o `history` primeiro) e gasta **1 pedido por jogo**, com 3 s entre pedidos. Corre em background: `docker logs -f scorexl-backend | grep -i backfill`.
+No `.env`, acrescenta (o resto fica):
 
-Quota do football: 7500/dia, reinicia às 00:00 UTC. Ver antes de correr o backfill:
+```
+GOOGLE_CLIENT_IDS=<GOOGLE_CLIENT_ID>,<client ID Android>,<client ID iOS>
+```
+
+`INTERNAL_API_KEY` tem de existir: o site usa-a para falar com o backend (sem ela, login e conta falham).
 
 ```bash
-A=$(grep -E '^API_SPORTS_KEY=' .env | cut -d= -f2-)
-curl -s -H "x-apisports-key: $A" https://v3.football.api-sports.io/status | grep -o '"requests":{[^}]*}'
+sudo ./scripts/bootstrap.sh
+./scripts/deploy.sh
 ```
 
-Se faltar quota, faz `days=30` num dia e `days=60` no seguinte (os já preenchidos são saltados).
+Verificar:
+
+```bash
+docker logs scorexl-backend 2>&1 | grep -E "Started|\[feed\]|ERROR"
+curl -s https://api.scorexl.com/picks/api/v1/summary
+curl -s -o /dev/null -w "%{http_code}\n" -X POST https://api.scorexl.com/user/api/v1/push/notify   # 401
+curl -s -o /dev/null -w "%{http_code}\n" https://scorexl.com/                                     # 200
+```
+
+No primeiro arranque o backend importa o feed todo e envia, no máximo, uma push de novos palpites
+(só se houver jogo por começar) e uma de resultados por dia dos últimos 2 dias.
 
 ## Atalho SSH (no teu PC)
 

@@ -27,7 +27,10 @@ cat > .env <<'X'
 POSTGRES_USER=scorexl
 BACKEND_POSTGRES_PASSWORD=scorexl
 INTERNAL_API_KEY=dev
-API_SPORTS_KEY=
+GOOGLE_CLIENT_IDS=<GOOGLE_CLIENT_ID do web>
+VAPID_PUBLIC_KEY=<...>
+VAPID_PRIVATE_KEY=<...>
+VAPID_EMAIL=mailto:devmacuacua@gmail.com
 X
 ```
 
@@ -50,20 +53,23 @@ export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5440/scorexl SPRING_DAT
 ## 5. Confirmar o backend
 
 ```bash
-curl -s http://localhost:8080/basketball/api/v1/quota
+curl -s http://localhost:8080/picks/api/v1/summary
 ```
 
-## 6. Web
+## 6. Web (Node 22)
 
 ```bash
 cd ~/projects/scorexl-web
+nvm use 22
 pnpm install
 cat > .env.local <<'X'
-SCOREXL_API_URL=http://localhost:8080/football
-SCOREXL_BASKETBALL_API_URL=http://localhost:8080/basketball
+SCOREXL_PICKS_API_URL=http://localhost:8080/picks
 SCOREXL_USER_API_URL=http://localhost:8080/user
-NEXT_PUBLIC_BACKEND_URL=http://localhost:8080/football
 INTERNAL_API_KEY=dev
+AUTH_SECRET=<openssl rand -base64 32>
+GOOGLE_CLIENT_ID=<...>
+GOOGLE_CLIENT_SECRET=<...>
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=<o mesmo VAPID_PUBLIC_KEY>
 X
 pnpm dev
 ```
@@ -76,8 +82,7 @@ Troca `192.168.1.10` pelo IP do teu PC (precisa do modo 4B).
 cd ~/projects/scorexl-mobile
 npm install
 cat > .env <<'X'
-EXPO_PUBLIC_FOOTBALL_API_URL=http://192.168.1.10:8080/football
-EXPO_PUBLIC_BASKETBALL_API_URL=http://192.168.1.10:8080/basketball
+EXPO_PUBLIC_API_URL=http://192.168.1.10:8080
 X
 npm run start
 ```
