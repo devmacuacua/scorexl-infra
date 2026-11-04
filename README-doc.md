@@ -4,7 +4,7 @@
 
 | IP | Utilizador | Projeto |
 |---|---|---|
-| ver painel do DigitalOcean | `fmacuacua` (root bloqueado) | `/home/fmacuacua/projects/scorexl-infra` |
+| `188.166.60.166` (AMS3, 2 GB) | `fmacuacua` (root bloqueado) | `/home/fmacuacua/projects/scorexl-infra` |
 
 Os palpites vêm do feed [scorexl-picks](https://github.com/devmacuacua/scorexl-picks); o backend
 copia-os para a base, liquida-os e envia as push. Já não há motores nem chamadas à API-Sports.

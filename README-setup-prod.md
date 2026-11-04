@@ -1,6 +1,6 @@
 # Setup de produção
 
-Servidor `<IP>` (o do droplet, no painel) · utilizador `fmacuacua` · projeto em `~/projects/scorexl-infra`.
+Servidor `188.166.60.166` · utilizador `fmacuacua` · projeto em `~/projects/scorexl-infra`.
 
 ## 1. Droplet
 
@@ -10,7 +10,7 @@ Networking → Firewalls: portas 22 e 80.
 ## 2. Utilizador
 
 ```bash
-ssh root@<IP>
+ssh root@188.166.60.166
 adduser fmacuacua && usermod -aG sudo fmacuacua
 rsync -a --chown=fmacuacua:fmacuacua ~/.ssh /home/fmacuacua
 ```
@@ -44,7 +44,7 @@ Verificar:
 sudo sshd -T | grep -E 'permitrootlogin|passwordauthentication'   # ambos "no"
 ```
 
-No teu PC: `ssh root@<IP>` → `Permission denied (publickey)`.
+No teu PC: `ssh root@188.166.60.166` → `Permission denied (publickey)`.
 
 ## 3. Chave do GitHub
 
@@ -105,7 +105,7 @@ cd ~/projects/scorexl-infra && ./scripts/deploy.sh
 
 ## 7. DNS
 
-Cloudflare: `@`, `www`, `api`, `analytics` e `basketball-api` → A `<IP>` (proxy ligado).
+Cloudflare: `@`, `www`, `api`, `analytics` e `basketball-api` → A `188.166.60.166` (proxy ligado).
 
 ## 8. Verificar
 
@@ -126,7 +126,7 @@ nano ~/.ssh/config
 
 ```
 Host scorexl
-    HostName <IP>
+    HostName 188.166.60.166
     User fmacuacua
     IdentityFile ~/.ssh/id_rsa_do
 ```
